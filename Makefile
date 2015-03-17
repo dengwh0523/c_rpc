@@ -1,4 +1,5 @@
 all:
+	@mkdir -p bin lib
 	make -C rmiparse
 	make -C librmi_src
 
