@@ -1,7 +1,7 @@
 A light-weight RPC framework written by C. The name of this framework is rmi. It uses standard C header syntax for IDL. 
 
 [rmiparse]
-	This is the source code directory of the IDL compiler.
+	This is the source code directory of the IDL compiler. It is written with flex and bison.
 	
 [librmi_src]
 	This is the source code directory of rmi library.
