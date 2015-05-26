@@ -1,6 +1,10 @@
 #ifndef __SOCKET_H__
 #define __SOCKET_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define FD_SUCCESS	(0)
 #define FD_ERROR	(-1)
 #define FD_TIMEOUT	(-2)
@@ -16,13 +20,16 @@ int ip_to_net(char * ip);
 char * net_to_ip(int addr);
 
 // create socket
-int create_epoll(int maxfd);
 int close_fd(int fd);
+
+#ifndef _WIN32
+int create_epoll(int maxfd);
 int epoll_envent_add(int epollfd, int fd, int state, int mode, void * ptr);
 int epoll_envent_delete(int epollfd, int fd);
 int epoll_envent_modify(int epollfd, int fd, int state, int mode, void * ptr);
 int epoll_wait_data(int epollfd, int * fd_array, const int len, int timeout);
 int epoll_read_data(int fd, unsigned char * buf, int buf_size);
+#endif
 
 int create_tcp_server_socket(unsigned short port);
 int create_tcp_client_socket(char * dst_ip, unsigned short port);
@@ -47,6 +54,11 @@ int block_write(int fd, unsigned char * pbuf, int len);
 int get_host_info(int fd, char * src_ip, unsigned short * src_port);
 int get_peer_info(int fd, char * src_ip, unsigned short * src_port);
 int udp_set_dst(int fd, char * dst_ip, unsigned short port);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

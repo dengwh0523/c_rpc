@@ -1,7 +1,7 @@
 #ifndef __LIST_H__
 #define __LIST_H__
 
-#include <pthread.h>
+#include "thread.h"
 
 #define LIST_WAIT_FLAG		0
 #define LIST_OVERWRITE_FLAG	1
@@ -11,6 +11,10 @@
 
 #define DEFAULT_MAX_PACKET	16
 #define USER_NAME_MAX_LEN	32
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct NODE_S {
 	struct NODE_S * next;
@@ -23,7 +27,7 @@ typedef struct NODE_S {
 typedef struct LIST_S {
 	NODE_S * head;
 	NODE_S * tail;
-	pthread_mutex_t lock;
+	lock * lock;
 	int num;
 	int init_status;
 	unsigned char * pbuf;
@@ -41,7 +45,7 @@ typedef struct LOOPBUF_S {
 	int tail;
 	int num;
 	int left_num;
-	pthread_mutex_t lock;
+	lock * lock;
 	int status;
 } LOOPBUF_S;
 
@@ -79,7 +83,7 @@ int list_read_data(LIST_S * plist, unsigned char * pbuf, int max_len);
 int list_user_read(LIST_S * plist, char * user_name, unsigned char * pbuf, int max_len);
 
 int list_size(LIST_S * plist);
-void * list_at(LIST_S * plist, int index);
+void * list_at(LIST_S * plist, const int index);
 int list_erase(LIST_S * plist, const int index);
 int list_erase_it(LIST_S * plist, void * pbuf, LIST_CALLBACK cb);
 int list_operate_it(LIST_S * plist, LIST_CALLBACK cb);
@@ -101,5 +105,9 @@ int pool_read_data(POOL_S * pool, unsigned char * pbuf, int max_len);
 int pool_size(POOL_S * pool);
 int pool_operate_it(POOL_S * pool, LIST_CALLBACK cb);
 int pool_erase_it(POOL_S * pool, void * pbuf, LIST_CALLBACK cb);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

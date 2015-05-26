@@ -16,13 +16,13 @@ struct bbb {
 	unsigned int a[10] MARK(1, 0);
 	struct aaa a_array[20] MARK(2, 0);
 };
-int set_para(struct rmi * rmi, IN int index, IN struct aaa * para1); 
-int set_para2(struct rmi * rmi, IN int index, IN struct aaa * para1, IN struct bbb * para2); 
-int get_para(struct rmi * rmi, IN int index, OUT struct aaa *para1);
-int get_para2(struct rmi * rmi, IN int index, OUT struct aaa *para1, OUT struct bbb * para2);
+int set_para(struct rmi * rmi, _IN int index, _IN struct aaa * para1); 
+int set_para2(struct rmi * rmi, _IN int index, _IN struct aaa * para1, _IN struct bbb * para2); 
+int get_para(struct rmi * rmi, _IN int index, _OUT struct aaa *para1);
+int get_para2(struct rmi * rmi, _IN int index, _OUT struct aaa *para1, _OUT struct bbb * para2);
 
 int get_version(struct rmi * rmi);
-int test1(struct rmi * rmi, IN int, OUT char * ddd);
+int test1(struct rmi * rmi, _IN int, _OUT char * ddd);
 
 #endif
 

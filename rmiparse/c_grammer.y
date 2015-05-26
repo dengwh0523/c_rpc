@@ -491,9 +491,9 @@ parameter_declaration
 		strcpy(s_para.name, g_name);
 		strcpy(s_para.type, g_type);
 		s_para.len = array_len;
-		if (0 == memcmp($1, "IN", strlen("IN"))) {
+		if (0 == memcmp($1, "_IN", strlen("_IN"))) {
 			s_para.dir = PARA_IN;
-		} else if (0 == memcmp($1, "OUT", strlen("OUT"))) {
+		} else if (0 == memcmp($1, "_OUT", strlen("_OUT"))) {
 			s_para.dir = PARA_OUT;
 		}
 		if (PARA_OUT == s_para.dir && 1 != s_para.pointer) {
@@ -516,9 +516,9 @@ parameter_declaration
 		strcpy(s_para.type, g_type);
 		s_para.len = array_len;
 		sprintf(s_para.name, "para%d", list_size(&s_func.para_list));
-		if (0 == memcmp($1, "IN", strlen("IN"))) {
+		if (0 == memcmp($1, "_IN", strlen("_IN"))) {
 			s_para.dir = PARA_IN;
-		} else if (0 == memcmp($1, "OUT", strlen("OUT"))) {
+		} else if (0 == memcmp($1, "_OUT", strlen("_OUT"))) {
 			s_para.dir = PARA_OUT;
 		}
 		if (PARA_OUT == s_para.dir && 1 != s_para.pointer) {

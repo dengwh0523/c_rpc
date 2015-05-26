@@ -1,15 +1,26 @@
-#include <stdio.h>
+#ifndef _WIN32
 #include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <net/if.h>
 #include <fcntl.h>
-#include <errno.h>
 #include <netinet/tcp.h>
-#include <string.h>
 #include <sys/epoll.h>
+#else
+#include<winsock2.h>
+#include <io.h>
+#define close	closesocket
+#endif
+
+#include <errno.h>
+#include <string.h>
+#include <stdio.h>
 
 #include "socket.h"
 #include "debug.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct {
 	int err_no;
@@ -45,6 +56,14 @@ char * net_to_ip(int addr) {
 	return (char *)inet_ntoa(in);
 }
 
+int close_fd(int fd) {
+	if (fd > 0) {
+		close(fd);
+	}
+	return 0;
+}
+
+#ifndef _WIN32
 int create_epoll(int maxfd) {
 	int fd = -1;
 	fd = epoll_create(maxfd);
@@ -54,13 +73,6 @@ int create_epoll(int maxfd) {
 	}
 
 	return fd;
-}
-
-int close_fd(int fd) {
-	if (fd > 0) {
-		close(fd);
-	}
-	return 0;
 }
 
 int epoll_envent_add(int epollfd, int fd, int state, int mode, void * ptr) {
@@ -147,6 +159,7 @@ int epoll_read_data(int fd, unsigned char * buf, int buf_size) {
 		return rd_len;
 	}
 }
+#endif
 
 int create_tcp_server_socket(unsigned short port) {
 	int ret = 0;
@@ -380,6 +393,7 @@ int get_host_info(int fd, char * src_ip, unsigned short * src_port) {
 
 
 int set_fd_nonblock(int fd) {	
+#ifndef _WIN32
 	int flags = fcntl(fd, F_GETFL, 0);
 	if (flags < 0) {
 	   trace("fcntl socket error!\n");
@@ -390,6 +404,7 @@ int set_fd_nonblock(int fd) {
 	   trace("fcntl socket error!\n");
 	   return -1;
 	}
+#endif
 
 	return 0;
 }
@@ -410,7 +425,10 @@ int read_fd_timeout(int fd, unsigned char * pbuf, int len, int timeout/* unit: m
 	FD_SET(fd, &fdsr);
 
 	tv.tv_sec = timeout/1000;
-	tv.tv_usec = timeout%1000 * 1000;
+	tv.tv_usec = timeout%1000;
+#ifndef _WIN32
+	tv.tv_usec *= 1000;
+#endif
 
 	sel_ret = select(fd + 1, &fdsr, NULL, NULL, &tv);
 
@@ -427,7 +445,11 @@ int read_fd_timeout(int fd, unsigned char * pbuf, int len, int timeout/* unit: m
 	}
 
 	if (pbuf) {
+	#ifndef _WIN32
 		rd_len = read(fd, pbuf, len);
+	#else
+		rd_len = recv(fd, pbuf, len, 0);
+	#endif
 	} else {
 		return 0;
 	}
@@ -453,7 +475,10 @@ int write_fd_timeout(int fd, unsigned char * pbuf, int len, int timeout/*ms*/) {
 	FD_SET(fd, &fdsw);
 
 	tv.tv_sec = timeout/1000;
-	tv.tv_usec = timeout%1000 * 1000;
+	tv.tv_usec = timeout%1000;
+#ifndef _WIN32
+	tv.tv_usec *= 1000;
+#endif
 
 	sel_ret = select(fd + 1, NULL, &fdsw, NULL, &tv);
 
@@ -469,7 +494,11 @@ int write_fd_timeout(int fd, unsigned char * pbuf, int len, int timeout/*ms*/) {
 		return FD_TIMEOUT;
 	}
 
+#ifndef _WIN32
 	wr_len = write(fd, pbuf, len);
+#else
+	wr_len = send(fd, pbuf, len, 0);
+#endif
 
 	if( wr_len <= 0 )
 	{
@@ -524,7 +553,11 @@ int block_read(int fd, unsigned char * pbuf, int len) {
 	int ret = 0;
 	
 	while(rd_len != len) {
+	#ifndef _WIN32
 		ret = read(fd, pbuf+rd_len, len-rd_len);
+	#else
+		ret = recv(fd, pbuf+rd_len, len-rd_len, 0);
+	#endif
 		if (ret < 0) {
 			if (EAGAIN == errno || EINTR == errno) {
 				continue;
@@ -555,7 +588,11 @@ int block_write(int fd, unsigned char * pbuf, int len) {
 	int ret = 0;
 	
 	while(wr_len != len) {
+	#ifndef _WIN32
 		ret = write(fd, pbuf+wr_len, len-wr_len);
+	#else
+		ret = send(fd, pbuf+wr_len, len-wr_len, 0);
+	#endif
 		if (ret < 0) {
 			if (EAGAIN == errno || EINTR == errno) {
 				continue;
@@ -581,3 +618,6 @@ int block_write(int fd, unsigned char * pbuf, int len) {
 	return ret;
 }
 
+#ifdef __cplusplus
+}
+#endif

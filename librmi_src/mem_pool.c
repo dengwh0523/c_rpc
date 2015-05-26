@@ -1,5 +1,9 @@
 #include"mem_pool.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 mem_uint_t  mem_pagesize;
 
 static void *mem_palloc_block(mem_pool *pool, size_t size);
@@ -9,7 +13,11 @@ mem_int_t
 mem_os_init()
 {
 
+#ifndef _WIN32
     mem_pagesize = getpagesize();
+#else
+	mem_pagesize = 4096;
+#endif
 
 	return 0;
 }
@@ -226,3 +234,6 @@ mem_palloc_large(mem_pool *pool, size_t size)
     return p;
 }
 
+#ifdef __cplusplus
+}
+#endif

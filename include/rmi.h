@@ -1,9 +1,13 @@
 #ifndef __RMI_H__
 #define __RMI_H__
 
-#include <pthread.h>
 #include <stdio.h>
 #include <string.h>
+#include "thread.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define DEBUG
 
@@ -15,15 +19,19 @@
 
 #define MARK(field_num, string)
 
-#define IN 
-#define OUT 
+#define _IN 
+#define _OUT 
 
 #define STR_ARRAY_LEN(str)	(sizeof(str)/sizeof(str[0]))
 #define OFFSET(Type, member) (int)(&( ((Type*)0)->member) )
 #define SIZE(Type, member, num) (sizeof(((Type*)0)->member)/num)
 
+#ifdef _WIN32
+#define  snprintf  _snprintf
+#endif
+
 #ifdef DEBUG
-#define trace(fmt...) \
+#define trace(fmt, ...) \
 do{\
 	char __buf1[64], __buf2[1024];\
     snprintf(__buf1, sizeof(__buf1), "[%s:%d-%s] ", __FILE__, __LINE__, __FUNCTION__);\
@@ -31,7 +39,7 @@ do{\
     printf("%s%s", __buf1, __buf2);\
 } while(0)
 #else
-#define trace(fmt...) do {} while(0)
+#define trace(fmt, ...) do {} while(0)
 #endif
 
 #define RMI_ONE_WAY_REQ			1
@@ -86,8 +94,8 @@ struct rmi {
 	int fd;
 	int seq;
 	int thread_start;
-	pthread_t pid;
-	pthread_mutex_t lock;
+	thread_pool * thread_pool;
+	lock * lock;
 	int timeout;	// unit: 1ms
 	int max_connect_num;
 	int connect_num;
@@ -110,13 +118,14 @@ extern struct func_entry func_table[];
 extern struct struct_entry return_para[];
 
 int rmi_init(struct rmi * rmi);
+int rmi_finit(struct rmi * rmi);
 
 int rmi_set_timeout(struct rmi * rmi, int timeout/* unit: 1ms*/);
 int rmi_set_mem_pool_size(struct rmi * rmi, int pool_size);
 int rmi_set_max_connect_num(struct rmi * rmi, int num);
 
-int rmi_lock(struct rmi * rmi);
-int rmi_unlock(struct rmi * rmi);
+void rmi_lock(struct rmi * rmi);
+void rmi_unlock(struct rmi * rmi);
 
 int rmi_server_start(struct rmi * rmi, unsigned short port);
 int rmi_server_close(struct rmi * rmi);
@@ -129,6 +138,10 @@ int func_deserialize(unsigned char * pdata, const unsigned char * pbuf, const st
 int find_response(struct rmi_header * hdr, struct rmi_header * r_hdr);
 void gen_header(struct rmi_header * hdr, int id, int len, int seq);
 int invoke(struct rmi * rmi, int id, unsigned char * pbuf, int len, unsigned char ** r_buf, int * r_len);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

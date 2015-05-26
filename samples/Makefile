@@ -11,7 +11,7 @@ LIB_DIR := -L../lib
 BIN_DIR := -L../bin
 INC_DIRS := -I../include
 
-LIBS := -lrmi -lpthread -lrt
+LIBS := ../lib/librmi.a -lpthread -lrt
 
 .PHONY: all clean 
 

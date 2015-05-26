@@ -16,10 +16,10 @@ all: librmi.so librmi.a
 %.o : %.c
 	$(CC) $(CFLAG) -c -o $@ $<
 
-librmi.a : debug.o socket.o rmi.o list.o mem_pool.o
+librmi.a : debug.o socket.o rmi.o list.o mem_pool.o thread.o
 	ar rcs $(OUT_DIR)/$@ $^
 	
-librmi.so : debug.o socket.o rmi.o list.o mem_pool.o
+librmi.so : debug.o socket.o rmi.o list.o mem_pool.o thread.o
 	$(CC) -shared -fPIC -o $(OUT_DIR)/$@ $^
 	
 clean:

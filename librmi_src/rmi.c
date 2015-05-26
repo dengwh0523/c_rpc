@@ -4,6 +4,10 @@
 #include "list.h"
 #include "mem_pool.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void * rmi_listen_thread(void * arg);
 void * rmi_server_thread(void * arg);
 
@@ -13,16 +17,29 @@ int rmi_init(struct rmi * rmi) {
 		return -1;
 	}
 	memset(rmi, 0, sizeof(struct rmi));
-	pthread_mutex_init(&rmi->lock, NULL);
+	rmi->lock = lock_create();
 	return 0;
 }
 
-int rmi_lock(struct rmi * rmi) {
-	return pthread_mutex_lock(&rmi->lock);
+int rmi_finit(struct rmi * rmi) {
+	if (NULL == rmi) {
+		return 0;
+	}
+
+	if (rmi->lock) {
+		lock_destroy(rmi->lock);
+		rmi->lock = NULL;
+	}
+
+	return 0;
 }
 
-int rmi_unlock(struct rmi * rmi) {
-	return pthread_mutex_unlock(&rmi->lock);
+void rmi_lock(struct rmi * rmi) {
+	lock_lock(rmi->lock);
+}
+
+void rmi_unlock(struct rmi * rmi) {
+	lock_unlock(rmi->lock);
 }
 
 int rmi_set_timeout(struct rmi * rmi, int timeout/* unit: 1ms*/) {
@@ -115,7 +132,7 @@ int set_varint(const unsigned char * pdata, const int len, unsigned char * pbuf)
 			pbuf[r_len++] = (1 << 7) | (value & 0x7f);
 			value >>= 7;
 		} else {
-			pbuf[r_len++] = value;
+			pbuf[r_len++] = (unsigned char)value;
 			break;
 		}
 	}
@@ -138,16 +155,16 @@ int get_varint(unsigned char * pdata, const int len, const unsigned char * pbuf)
 	if (pdata) {
 		switch(len) {
 			case sizeof(char) : 
-				*(unsigned char *)pdata = value;
+				*(unsigned char *)pdata = (unsigned char)value;
 				break;
 			case sizeof(short) :
-				*(unsigned short *)pdata = value;
+				*(unsigned short *)pdata = (unsigned short)value;
 				break;
 			case sizeof(int) :
-				*(unsigned int *)pdata = value;
+				*(unsigned int *)pdata = (unsigned int)value;
 				break;
 			case sizeof(long long) :
-				*(unsigned long long *)pdata = value;
+				*(unsigned long long *)pdata = (unsigned long long)value;
 				break;
 			default	:
 				trace("para error\n");
@@ -190,7 +207,7 @@ int get_varint_signed(unsigned char * pdata, const int len, const unsigned char 
 
 	r_len = get_varint((unsigned char *)&value_unsigned, len, pbuf);
 	if (value_unsigned & 0x01) {
-		value = 0 - value_unsigned>>1;
+		value = 0 - (value_unsigned>>1);
 	} else {
 		value = value_unsigned>>1;
 	}
@@ -198,16 +215,16 @@ int get_varint_signed(unsigned char * pdata, const int len, const unsigned char 
 	if (pdata) {
 		switch(len) {
 			case sizeof(char) : 
-				*(signed char *)pdata = value;
+				*(signed char *)pdata = (signed char)value;
 				break;
 			case sizeof(short) :
-				*(short *)pdata = value;
+				*(short *)pdata = (short)value;
 				break;
 			case sizeof(int) :
-				*(int *)pdata = value;
+				*(int *)pdata = (int)value;
 				break;
 			case sizeof(long long) :
-				*(long long *)pdata = value;
+				*(long long *)pdata = (long long)value;
 				break;
 			default	:
 				trace("para error\n");
@@ -312,7 +329,7 @@ int serialize(const unsigned char * pdata, unsigned char * pbuf, const struct st
 }
 
 int deserialize(unsigned char * pdata, const unsigned char * pbuf, const int enc_len, const struct struct_entry * entry_in) {
-	int i, j;
+	int i;
 	struct struct_pair_entry * pair_entry;
 	const struct struct_entry * entry;
 	int member_num;
@@ -558,7 +575,6 @@ void * rmi_listen_thread(void * arg) {
 	int ret = 0;
 	struct rmi * rmi = (struct rmi *)arg;	
 	struct rmi * client_rmi = NULL;
-	int i;
 	
 	int client_fd = -1;
 	
@@ -597,12 +613,13 @@ void * rmi_listen_thread(void * arg) {
 		client_rmi->timeout = rmi->timeout;
 		client_rmi->user_data = rmi;
 		client_rmi->thread_start = 1;
-		pthread_create(&client_rmi->pid, NULL, rmi_server_thread, (void *)client_rmi);
+/*		pthread_create(&client_rmi->pid, NULL, rmi_server_thread, (void *)client_rmi);*/
+		thread_run(rmi_server_thread, (void *)client_rmi);
 		pool_write_data(rmi->user_data, (unsigned char *)&client_rmi, sizeof(struct rmi *));
+		
 		//printf("!!!! connect num: %d !!!!!!!!!!\n", pool_size(rmi->user_data));
 	}
 
-exit:
 	rmi->thread_start = 0;
 	close_fd(rmi->fd);
 	
@@ -612,7 +629,6 @@ exit:
 void * rmi_server_thread(void * arg) {
 	struct rmi * rmi = (struct rmi *)arg;
 	struct rmi * server_rmi = rmi->user_data;
-	int i;
 	int ret = 0;
 	struct rmi_header hdr;
 	unsigned char * pdata;
@@ -620,7 +636,7 @@ void * rmi_server_thread(void * arg) {
 	int len;
 	struct func_entry * func_entry;
 	
-	pthread_detach(pthread_self());
+/*	pthread_detach(pthread_self());*/
 
 	rmi->user_data = NULL;
 
@@ -676,7 +692,6 @@ void * rmi_server_thread(void * arg) {
 		}
 	}
 
-exit:
 	rmi->thread_start = 0;
 	pool_erase_it(server_rmi->user_data, rmi, rmi_cmp_fd);
 	
@@ -726,7 +741,10 @@ int rmi_server_start(struct rmi * rmi, unsigned short port) {
 	}
 
 	rmi->thread_start = 1;
-	pthread_create(&rmi->pid, NULL, rmi_listen_thread, (void *)rmi);
+/*	pthread_create(&rmi->pid, NULL, rmi_listen_thread, (void *)rmi);*/
+	rmi->thread_pool = tpool_create(1);
+	msleep(1);
+	tpool_start(rmi->thread_pool, rmi_listen_thread, (void *)rmi);
 
 	return 0;
 
@@ -742,19 +760,20 @@ failed:
 }
 
 int rmi_server_close(struct rmi * rmi) {
-	struct rmi client_rmi;
 	if (NULL == rmi) {
 		trace("para error\n");
 		return -1;
 	}
 
 	rmi->thread_start = 0;
-	pthread_join(rmi->pid, 0);
+/*	pthread_join(rmi->pid, 0);*/
+	tpool_destroy(rmi->thread_pool);
+	rmi->thread_pool = NULL;
 
 	pool_operate_it(rmi->user_data, rmi_operate_close);
 
 	while(pool_size(rmi->user_data)) {
-		usleep(0);
+		msleep(0);
 	}	
 
 	if (rmi->user_data) {
@@ -765,6 +784,8 @@ int rmi_server_close(struct rmi * rmi) {
 	if (rmi->mem_pool) {
 		mem_destroy_pool(rmi->mem_pool);
 	}
+
+	rmi_finit(rmi);
 
 	return 0;
 }
@@ -810,5 +831,12 @@ int rmi_client_close(struct rmi * rmi) {
 	if (rmi->mem_pool) {
 		mem_destroy_pool(rmi->mem_pool);
 	}
+
+	rmi_finit(rmi);
+	
 	return 0;
 }
+
+#ifdef __cplusplus
+}
+#endif

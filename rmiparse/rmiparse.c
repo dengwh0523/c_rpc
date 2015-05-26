@@ -262,6 +262,18 @@ int output_header(FILE * fp, int flag) {
 	return 0;
 }
 
+int output_cplus_start(FILE * fp) {
+	output(fp, "#ifdef __cplusplus\n"
+			   "extern \"C\" {\n"
+			   "#endif\n\n");
+}
+
+int output_cplus_end(FILE * fp) {
+	output(fp, "#ifdef __cplusplus\n"
+			   "}\n"
+			   "#endif\n\n");
+}
+
 int output_struct_member(FILE * fp, LIST_S * struct_list) {
 	int struct_num;
 	int i, j;
@@ -362,6 +374,7 @@ int output_struct_pair(FILE * fp, LIST_S * struct_list) {
 		output(fp, struct_info->name);
 		output(fp, "},\n");
 	}
+	output(fp, "\t{NULL, 0, NULL},\n");
 	output(fp, "};\n\n");
 
 	return 0;
@@ -719,6 +732,7 @@ int generate_stub_h(LIST_S * struct_list, LIST_S * func_list, FILE * fp) {
 
 int generate_stub_c(LIST_S * struct_list, LIST_S * func_list, FILE * fp) {
 	output_header(fp, 1);
+	output_cplus_start(fp);
 	output_struct_member(fp, struct_list);
 	output_struct_pair(fp, struct_list);
 	output_func_para(fp, func_list);
@@ -727,6 +741,7 @@ int generate_stub_c(LIST_S * struct_list, LIST_S * func_list, FILE * fp) {
 	output_func_map(fp, func_list, 1);
 	
 	output_func_definition(fp, func_list);
+	output_cplus_end(fp);
 
 	fclose(fp);
 	return 0;
@@ -734,6 +749,7 @@ int generate_stub_c(LIST_S * struct_list, LIST_S * func_list, FILE * fp) {
 
 int generate_proxier_c(LIST_S * struct_list, LIST_S * func_list, FILE * fp) {
 	output_header(fp, 0);
+	output_cplus_start(fp);
 	output_struct_member(fp, struct_list);
 	output_struct_pair(fp, struct_list);
 	output_func_para(fp, func_list);
@@ -742,6 +758,7 @@ int generate_proxier_c(LIST_S * struct_list, LIST_S * func_list, FILE * fp) {
 	output_func_map(fp, func_list, 0);
 	
 	output_proxier_func(fp, func_list);
+	output_cplus_end(fp);
 
 	fclose(fp);
 	return 0;

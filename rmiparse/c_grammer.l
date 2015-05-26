@@ -37,8 +37,8 @@ int set_input_file(char * infile);
 "#endif"(.)*\n		{ }
 "#ifndef"(.)*\n		{ }
 	
-"IN"				{get_token_name(); return(DIR);}
-"OUT"				{get_token_name(); return(DIR);}
+"_IN"				{get_token_name(); return(DIR);}
+"_OUT"				{get_token_name(); return(DIR);}
 
 "MARK"				{get_token_name(); return(MARK);}
 
