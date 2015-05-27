@@ -70,6 +70,10 @@ int str_to_int(char * str);
 typedef int (* for_each_cb)(void * data, void * id);
 void * for_each(void * buf, int len, int step, void * id, for_each_cb cb);
 
+#define FOR_EACH(table, type, para, func) \
+	(type *)for_each((void *)table, STR_ARRAY_LEN(table), sizeof(type), (void *)para, (for_each_cb)func)
+
+
 #ifdef __cplusplus
 }
 #endif

@@ -477,6 +477,20 @@ int invoke(struct rmi * rmi, int id, unsigned char * pbuf, int len, unsigned cha
 	struct rmi_header hdr, hdr_orig;
 	struct rmi_header r_hdr;
 
+	if (rmi->fd <= 0) {
+		int fd = -1;
+	
+		fd = create_tcp_client_socket(rmi->server_ip, rmi->server_port);
+		if (fd < 0) {
+			trace("create_tcp_client_socket failed; host[%s], port[%d]\n", host, port);
+			return -1;
+		}
+
+		set_fd_nonblock(fd);
+		
+		rmi->fd = fd;
+	}
+
 	*r_buf = NULL;
 	
 	gen_header(&hdr, id, len, rmi->seq++);
@@ -500,7 +514,7 @@ int invoke(struct rmi * rmi, int id, unsigned char * pbuf, int len, unsigned cha
 /*	r_ret = block_write(rmi->fd, pbuf, len);*/
 	if (r_ret < 0) {
 		//trace("nonblock_write failed; err: %s\n", get_fd_error_str(r_ret));
-		goto exit;
+		goto socket_error;
 	}
 
 	// 获取返回值
@@ -508,7 +522,7 @@ int invoke(struct rmi * rmi, int id, unsigned char * pbuf, int len, unsigned cha
 /*	r_ret = block_read(rmi->fd, (unsigned char *)&r_hdr, sizeof(r_hdr));*/
 	if (r_ret < 0) {
 		//trace("nonblock_read failed; err: %s\n", get_fd_error_str(r_ret));
-		goto exit;
+		goto socket_error;
 	}
 	deserialize_rmi_header(&r_hdr);
 
@@ -526,7 +540,7 @@ int invoke(struct rmi * rmi, int id, unsigned char * pbuf, int len, unsigned cha
 	/*	r_ret = block_read(rmi->fd, *r_buf, *r_len);*/
 		if (r_ret < 0) {
 			//trace("nonblock_read failed; err: %s\n", get_fd_error_str(r_ret));
-			goto exit;
+			goto socket_error;
 		}
 	}
 
@@ -535,6 +549,12 @@ int invoke(struct rmi * rmi, int id, unsigned char * pbuf, int len, unsigned cha
 		r_ret = -1;
 		goto exit;
 	}
+
+	return 0;
+
+socket_error:
+	close_fd(rmi->fd);
+	rmi->fd = -1;
 	
 exit:
 	return r_ret;
@@ -626,6 +646,7 @@ void * rmi_listen_thread(void * arg) {
 
 	rmi->thread_start = 0;
 	close_fd(rmi->fd);
+	rmi->fd = -1;
 	
 	return NULL;
 }
@@ -707,6 +728,7 @@ void * rmi_server_thread(void * arg) {
 	pool_erase_it(server_rmi->user_data, rmi, rmi_cmp_fd);
 	
 	close_fd(rmi->fd);
+	rmi->fd = -1;
 	if (rmi->mem_pool) {
 		mem_destroy_pool(rmi->mem_pool);
 	}
@@ -766,6 +788,7 @@ failed:
 	if (rmi->user_data) {
 		pool_finit(rmi->user_data);
 		free(rmi->user_data);
+		rmi->user_data = NULL;
 	}
 	return -1;
 }
@@ -794,6 +817,7 @@ int rmi_server_close(struct rmi * rmi) {
 	}
 	if (rmi->mem_pool) {
 		mem_destroy_pool(rmi->mem_pool);
+		rmi->mem_pool = NULL;
 	}
 
 	rmi_finit(rmi);
@@ -803,6 +827,16 @@ int rmi_server_close(struct rmi * rmi) {
 
 int rmi_client_start(struct rmi * rmi, char * host, unsigned short port) {
 	int fd = -1;
+	
+	fd = create_tcp_client_socket(host, port);
+	if (fd < 0) {
+		trace("create_tcp_client_socket failed; host[%s], port[%d]\n", host, port);
+		return -1;
+	}
+
+	set_fd_nonblock(fd);
+	
+	rmi->fd = fd;
 
 	if (rmi->timeout <= 0) {
 		rmi->timeout = RMI_DEFAULT_TIMEOUT;
@@ -817,16 +851,9 @@ int rmi_client_start(struct rmi * rmi, char * host, unsigned short port) {
 		trace("mem_create_pool failed\n");
 		return -1;
 	}
-	
-	fd = create_tcp_client_socket(host, port);
-	if (fd < 0) {
-		trace("create_tcp_client_socket failed; host[%s], port[%d]\n", host, port);
-		return -1;
-	}
 
-	set_fd_nonblock(fd);
-	
-	rmi->fd = fd;
+	memcpy(rmi->server_ip, host, strlen(host));
+	rmi->server_port = port;
 
 	return 0;
 }
@@ -834,13 +861,16 @@ int rmi_client_start(struct rmi * rmi, char * host, unsigned short port) {
 int rmi_client_close(struct rmi * rmi) {
 	if (rmi->fd > 0) {
 		close_fd(rmi->fd);
+		rmi->fd = -1;
 	}
 	if (rmi->user_data) {
 		free(rmi->user_data);
+		rmi->user_data = NULL;
 	}
 
 	if (rmi->mem_pool) {
 		mem_destroy_pool(rmi->mem_pool);
+		rmi->mem_pool = NULL;
 	}
 
 	rmi_finit(rmi);

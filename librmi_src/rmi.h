@@ -101,6 +101,8 @@ struct rmi {
 	int connect_num;
 	void * mem_pool;
 	int mem_pool_size;
+	char server_ip[16];
+	unsigned short server_port;
 	void * user_data;
 };
 
