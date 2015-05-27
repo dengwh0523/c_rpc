@@ -726,14 +726,18 @@ void * rmi_server_thread(void * arg) {
 
 	rmi->thread_start = 0;
 	pool_erase_it(server_rmi->user_data, rmi, rmi_cmp_fd);
-	
-	close_fd(rmi->fd);
-	rmi->fd = -1;
+
+	if (rmi->fd > 0) {
+		close_fd(rmi->fd);
+		rmi->fd = -1;
+	}
 	if (rmi->mem_pool) {
 		mem_destroy_pool(rmi->mem_pool);
+		rmi->mem_pool = NULL;
 	}
 	if (rmi->user_data) {
 		free(rmi->user_data);
+		rmi->user_data = NULL;
 	}
 	//printf("!!!! connect num2: %d !!!!!!!!!!\n", pool_size(server_rmi->user_data));
 
