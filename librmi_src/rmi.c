@@ -483,6 +483,9 @@ int invoke(struct rmi * rmi, int id, unsigned char * pbuf, int len, unsigned cha
 	hdr_orig = hdr;
 	serialize_rmi_header(&hdr);
 
+	memcpy(pbuf, &hdr, sizeof(hdr));
+
+#if 0
 	// 发送消息头
 	r_ret = nonblock_write(rmi->fd, (unsigned char *)&hdr, sizeof(hdr), rmi->timeout);
 /*	r_ret = block_write(rmi->fd, (unsigned char *)&hdr, sizeof(hdr));*/
@@ -490,9 +493,10 @@ int invoke(struct rmi * rmi, int id, unsigned char * pbuf, int len, unsigned cha
 		//trace("nonblock_write failed; err: %s\n", get_fd_error_str(r_ret));
 		goto exit;
 	}
+#endif
 
 	// 发送消息体
-	r_ret = nonblock_write(rmi->fd, pbuf, len, rmi->timeout);
+	r_ret = nonblock_write(rmi->fd, pbuf, len+sizeof(struct rmi_header), rmi->timeout);
 /*	r_ret = block_write(rmi->fd, pbuf, len);*/
 	if (r_ret < 0) {
 		//trace("nonblock_write failed; err: %s\n", get_fd_error_str(r_ret));
@@ -544,11 +548,11 @@ static int response(struct rmi * rmi, struct rmi_header * hdr, int error_code) {
 
 	serialize_rmi_header(hdr);
 
-	ret = nonblock_write(rmi->fd, (unsigned char *)hdr, sizeof(struct rmi_header), rmi->timeout);
-	if (ret < 0) {
-		trace("nonblock_write failed; err: %s\n", get_fd_error_str(ret));
-		return -1;
-	}
+/*	ret = nonblock_write(rmi->fd, (unsigned char *)hdr, sizeof(struct rmi_header), rmi->timeout);*/
+/*	if (ret < 0) {*/
+/*		trace("nonblock_write failed; err: %s\n", get_fd_error_str(ret));*/
+/*		return -1;*/
+/*	}*/
 
 	return 0;
 }
@@ -641,6 +645,8 @@ void * rmi_server_thread(void * arg) {
 	rmi->user_data = NULL;
 
 	while(rmi->thread_start) {
+		int error_code = 0;
+		
 		if (0 != read_fd_timeout(rmi->fd, NULL, 0, rmi->timeout)) {
 			continue;
 		}
@@ -665,30 +671,35 @@ void * rmi_server_thread(void * arg) {
 			//trace("nonblock_read failed; err: %s\n", get_fd_error_str(ret));
 			break;
 		}
-		
-		if ((func_entry = get_func_entry(hdr.funcid)) == NULL) {
-			trace("req interface is not support now!\n");
-			hdr.plen = 0;
-			response(rmi, &hdr, 2);
-			continue;
-		}	
 
-		if (0 != func_entry->invoke_func(rmi, func_entry, pdata, hdr.plen, &pbuf, &len)) {
-			trace("func[%d] failed!\n", hdr.funcid);
-			hdr.plen = 0;
-			response(rmi, &hdr, 3);
-			continue;
-		}
+		do {			
+			if ((func_entry = get_func_entry(hdr.funcid)) == NULL) {
+				trace("req interface is not support now!\n");
+				len = 0;
+				error_code = 2;
+				pbuf = (unsigned char *)&hdr;
+				break;
+			}	
 
-		hdr.plen = len;
-		response(rmi, &hdr, 0);
-
-		if (pbuf) {
-			ret = nonblock_write(rmi->fd, pbuf, len, rmi->timeout);
-			if (ret < 0) {
-				//trace("nonblock_write failed; err: %s\n", get_fd_error_str(ret));
+			if (0 != func_entry->invoke_func(rmi, func_entry, pdata, hdr.plen, &pbuf, &len)) {
+				trace("func[%d] failed!\n", hdr.funcid);
+				len = 0;
+				error_code = 3;
+				pbuf = (unsigned char *)&hdr;
 				break;
 			}
+		} while(0);
+
+		hdr.plen = len;
+		response(rmi, &hdr, error_code);
+		if (len) {
+			memcpy(pbuf, &hdr, sizeof(hdr));
+		}
+
+		ret = nonblock_write(rmi->fd, pbuf, len+sizeof(hdr), rmi->timeout);
+		if (ret < 0) {
+			//trace("nonblock_write failed; err: %s\n", get_fd_error_str(ret));
+			break;
 		}
 	}
 

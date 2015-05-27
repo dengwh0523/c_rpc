@@ -65,6 +65,10 @@ int end_time(TIME_USED_S * pstTimeUsed);
 unsigned int get_used_time(TIME_USED_S * pstTimeUsed);
 
 unsigned int get_tick_time(void);	// unit: ms
+int str_to_int(char * str);
+
+typedef int (* for_each_cb)(void * data, void * id);
+void * for_each(void * buf, int len, int step, void * id, for_each_cb cb);
 
 #ifdef __cplusplus
 }

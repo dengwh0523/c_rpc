@@ -168,6 +168,26 @@ unsigned int get_tick_time() {
 }
 #endif
 
+int str_to_int(char * str) {
+	return strtol(str, NULL, 0);
+}
+
+void * for_each(void * buf, int len, int step, void * id, for_each_cb cb) {
+	int i;
+	for (i = 0; i < len; i++) {
+		if (0 == cb(buf, id)) {
+			return buf;
+		}
+	#ifdef _WIN32
+		(char *)buf += step;
+	#else
+		buf += step;
+	#endif
+	}
+
+	return NULL;
+}
+
 #ifdef __cplusplus
 }
 #endif

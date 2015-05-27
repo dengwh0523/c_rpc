@@ -512,7 +512,8 @@ int output_func_definition(FILE * fp, LIST_S * func_list) {
 
 		output(fp, "\tint i;\n");
 		output(fp, "\tint parse_len = 0;\n");
-		output(fp, "\tint para_num = 0;\n\n");
+		output(fp, "\tint para_num = 0;\n");
+		output(fp, "\tunsigned char *buf;\n\n");
 		output(fp, "\t// 参数列表\n");
 		output(fp, "\tint r_ret;\n");
 
@@ -563,7 +564,7 @@ int output_func_definition(FILE * fp, LIST_S * func_list) {
 		output(fp, ");\n");
 		
 		output(fp, "\n\t// 序列化出参数\n");
-		output(fp, "\t*ret_len = (sizeof(r_ret)");
+		output(fp, "\t*ret_len = sizeof(struct rmi_header)+(sizeof(r_ret)");
 		for (j = 0; j < para_num; j++) {
 			struct parameter * para;
 			para = list_at(&func_info->para_list, j);
@@ -580,7 +581,8 @@ int output_func_definition(FILE * fp, LIST_S * func_list) {
 		output(fp, "\t	trace(\"malloc failed\\n\");\n");
 		output(fp, "\t	return -1;\n");
 		output(fp, "\t}\n");
-		output(fp, "\tparse_len += func_serialize((unsigned char *)&r_ret,*ret_buf+parse_len, &return_para[0]);\n");
+		output(fp, "\tbuf = *ret_buf + sizeof(struct rmi_header);\n");
+		output(fp, "\tparse_len += func_serialize((unsigned char *)&r_ret, buf+parse_len, &return_para[0]);\n");
 
 		for (j = 0; j < para_num; j++) {
 			struct parameter * para;
@@ -590,7 +592,7 @@ int output_func_definition(FILE * fp, LIST_S * func_list) {
 			}
 			output(fp, "\tparse_len += func_serialize((unsigned char *)&r_");
 			output(fp, para->name);
-			output(fp, ",*ret_buf+parse_len, &func->para[para_num++]);\n");
+			output(fp, ", buf+parse_len, &func->para[para_num++]);\n");
 		}
 		output(fp, "\n\t*ret_len = parse_len;\n\n");
 		output(fp, "\treturn 0;\n");
@@ -635,7 +637,7 @@ int output_proxier_func(FILE * fp, LIST_S * func_list) {
 		output(fp, ") {\n");
 
 		// parameter
-		output(fp, "\tunsigned char pbuf[(sizeof(int)");
+		output(fp, "\tunsigned char buf[sizeof(struct rmi_header)+(sizeof(int)");
 		for (j = 0; j < para_num; j++) {
 			struct parameter * para;
 			para = list_at(&func_info->para_list, j);
@@ -647,6 +649,7 @@ int output_proxier_func(FILE * fp, LIST_S * func_list) {
 			output(fp, ")");
 		}
 		output(fp, ")*2] = {0};\n");
+		output(fp, "\tunsigned char * pbuf = buf+sizeof(struct rmi_header);\n");
 
 		output(fp, "\tunsigned char * pdata;\n");
 		output(fp, "\tint len = 0;\n");
@@ -683,7 +686,7 @@ int output_proxier_func(FILE * fp, LIST_S * func_list) {
 		}
 
 		output(fp, "\n\t// 远程调用\n");
-		output(fp, "\tif (0 != invoke(rmi, func_id, pbuf, len, &pdata, &len)) {\n");
+		output(fp, "\tif (0 != invoke(rmi, func_id, buf, len, &pdata, &len)) {\n");
 		output(fp, "\t	trace(\"invoke failed\\n\");\n");
 		output(fp, "\t	return -1;\n");
 		output(fp, "\t}\n");
