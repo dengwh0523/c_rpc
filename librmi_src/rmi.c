@@ -76,18 +76,11 @@ static struct struct_pair_entry * get_struct_entry(char * struct_name) {
 int func_id_cmp(void * data, void * id) {
 	unsigned int dst_id = (unsigned int)id;
 	unsigned int src_id = ((struct func_entry *)data)->func_id;
-	unsigned int dst_mod, src_mod;
-	int ret;
-	dst_mod = dst_id & 0x1;
-	src_mod = src_id & 0x1;
-	dst_id >>= 1;
-	src_id >>= 1;
-	ret = dst_id - src_id;
-	if (0 == ret) {
-		return dst_mod-src_mod;
+	if (dst_id == src_id) {
+		return 0;
 	}
-	
-	return ret;
+
+	return (dst_id>src_id) ? 1 : -1;
 }
 
 struct func_entry * get_func_entry(int id) {
