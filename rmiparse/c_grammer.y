@@ -446,6 +446,9 @@ direct_declarator
 	{
 	}
 	| direct_declarator '[' constant_expression ']'
+	{
+		array_len = -1;
+	}
 	| direct_declarator '[' ']'
 	| direct_declarator '(' parameter_type_list ')'
 	{

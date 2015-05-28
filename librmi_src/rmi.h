@@ -17,7 +17,7 @@ extern "C" {
 /*#define RMI_MAGIC				'rmi'*/
 #define SUPPORT_RMI_VER			1
 
-#define MARK(field_num, string)
+#define MARK(field_num, is_str)
 
 #define _IN 
 #define _OUT 

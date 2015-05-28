@@ -9,7 +9,7 @@ CFLAG += -W
 
 LIB_DIR := -L../lib
 BIN_DIR := -L../bin
-INC_DIRS := -I../include
+INC_DIRS := -I../librmi_src
 
 LIBS := ../lib/librmi.a -lpthread -lrt
 

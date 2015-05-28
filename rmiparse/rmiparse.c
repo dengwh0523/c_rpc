@@ -295,6 +295,7 @@ int output_struct_member(FILE * fp, LIST_S * struct_list) {
 			char buf[16] = {0};
 			int array_len;
 			int is_struct = 0;
+			int is_str = 0;
 			para = list_at(&struct_info->para_list, j);
 			output(fp, "\t");
 			output(fp, "{");
@@ -318,23 +319,36 @@ int output_struct_member(FILE * fp, LIST_S * struct_list) {
 			// array num
 			if (!is_struct && RMI_FIELD_LEN == para->field_type) {
 				array_len = 1;
+				is_str = 1;
 			} else {
 				array_len = para->len;
 			}
-			memset(buf, 0, sizeof(buf));
-			sprintf(buf, "%d", array_len);
-			output(fp, buf);
-			output(fp, ", ");
+			printf("array_len: %d, name: %s, is_str: %d\n", array_len, para->name, is_str);
+			if (1 == array_len) {
+				output(fp, "1, ");
+			} else {
+				output(fp, "SIZE(");
+				output(fp, struct_info->type);
+				output(fp, ", ");
+				output(fp, para->name);
+				output(fp, ", ");
+				output(fp, "sizeof(");
+				output(fp, para->type);
+				output(fp, ")");
+				output(fp, "), ");
+			}
 			// size
-			output(fp, "SIZE(");
-			output(fp, struct_info->type);
-			output(fp, ", ");
-/*			output(fp, struct_info->name);*/
-/*			output(fp, ", ");*/
-			output(fp, para->name);
-			output(fp, ", ");
-			output(fp, buf);
-			output(fp, "), ");
+			if (is_str) {
+				output(fp, "SIZE(");
+				output(fp, struct_info->type);
+				output(fp, ", ");
+				output(fp, para->name);
+				output(fp, ", 1), ");
+			} else {
+				output(fp, "sizeof(");
+				output(fp, para->type);
+				output(fp, "), ");
+			}
 			// offset
 			output(fp, "OFFSET(");
 			output(fp, struct_info->type);
@@ -851,7 +865,7 @@ int gen_field_type(struct parameter * para) {
 	// string
 	if (para->string && \
 		0 == memcmp(para->type, "char", strlen("char")) && \
-		para->len > 1) {		
+		para->len < 0) {		
 		return RMI_FIELD_LEN;	
 	}
 
