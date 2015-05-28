@@ -102,4 +102,6 @@ int pool_size(POOL_S * pool);
 int pool_operate_it(POOL_S * pool, LIST_CALLBACK cb);
 int pool_erase_it(POOL_S * pool, void * pbuf, LIST_CALLBACK cb);
 
+#define to_list_node(ptr) (NODE_S *)((char*)ptr-sizeof(NODE_S))
+
 #endif

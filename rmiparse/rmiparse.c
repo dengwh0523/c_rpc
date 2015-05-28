@@ -767,6 +767,48 @@ int generate_proxier_c(LIST_S * struct_list, LIST_S * func_list, FILE * fp) {
 	return 0;
 }
 
+static unsigned int min_func_id;
+static NODE_S * min_node;
+
+int get_min_id(void * src, void * dst) {
+	struct func_info * func_info = (struct func_info *)dst;
+	if (func_info->func_id < min_func_id) {
+		min_func_id = func_info->func_id;
+		min_node = to_list_node(func_info);
+	}
+
+	return 0;
+}
+
+void func_sort(LIST_S * func_list) {
+	int func_num;
+	int i, j;
+
+	LIST_S stList;
+	struct func_info * func_info;
+
+	memset(&stList, 0, sizeof(stList));
+	list_init(&stList, 0, 0, 0, 0);
+
+	do {
+		min_func_id = 0xffffffff;
+		func_num = list_size(func_list);
+		if (func_num <= 0) {
+			break;
+		}
+		
+		list_operate_it(func_list, get_min_id);
+		if (min_node) {
+			list_write_data(&stList, min_node->data, sizeof(struct func_info), 0);
+			list_delete_node(func_list, min_node);
+		}
+	} while(1);
+
+	list_finit(func_list);
+
+	*func_list = stList;
+}
+
 int main(int argc, char * argv[]) {
 	int struct_num;
 	int func_num;
@@ -791,6 +833,8 @@ int main(int argc, char * argv[]) {
 		trace("sytax error\n");
 		return -1;
 	}
+
+	func_sort(&g_func_list);
 
 	// generate_stub_h(&g_struct_list, &g_func_list, stub_h_fp);
 	generate_stub_c(&g_struct_list, &g_func_list, stub_c_fp);

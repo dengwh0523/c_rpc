@@ -172,17 +172,61 @@ int str_to_int(char * str) {
 	return strtol(str, NULL, 0);
 }
 
-void * for_each(void * buf, int len, int step, void * id, for_each_cb cb) {
+char * for_each(char * buf, int len, int step, void * id, for_each_cb cb) {
 	int i;
 	for (i = 0; i < len; i++) {
 		if (0 == cb(buf, id)) {
 			return buf;
 		}
-	#ifdef _WIN32
-		(char *)buf += step;
-	#else
 		buf += step;
-	#endif
+	}
+
+	return NULL;
+}
+
+char * fast_for_each(char * buf, int len, int step, void * id, for_each_cb cb) {
+	int i;
+	int ret = 0;
+	int left = 0;
+	int right = len-1;
+	int next;
+	char * tmp_buf;
+
+	// cmp min
+	tmp_buf = buf;
+	ret = cb(tmp_buf, id);
+	if (0 == ret) {
+		return tmp_buf;
+	}
+	if (ret < 0) {
+		return NULL;
+	}
+
+	// cmp max
+	tmp_buf = buf+(len-1)*step;
+	ret = cb(tmp_buf, id);
+	if (0 == ret) {
+		return tmp_buf;
+	}
+	if (ret > 0) {
+		return NULL;
+	}
+
+	//else	
+	for (i = 1; i < len-1; i++) {
+		next = MIDDLE(left, right);
+		if (next == left) {
+			next = right;
+		}
+		tmp_buf = buf + next*step;
+		ret = cb(tmp_buf, id);
+		if (0 == ret) {
+			return tmp_buf;
+		} else if (ret < 0) {
+			right = next;			
+		} else {
+			left = next;
+		}
 	}
 
 	return NULL;
