@@ -323,7 +323,7 @@ int output_struct_member(FILE * fp, LIST_S * struct_list) {
 			} else {
 				array_len = para->len;
 			}
-			printf("array_len: %d, name: %s, is_str: %d\n", array_len, para->name, is_str);
+/*			printf("array_len: %d, name: %s, is_str: %d\n", array_len, para->name, is_str);*/
 			if (1 == array_len) {
 				output(fp, "1, ");
 			} else {

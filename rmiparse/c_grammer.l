@@ -19,6 +19,7 @@ int set_input_file(char * infile);
 %x incl
 %x def
 %x comment
+%x cplus
 
 %%
 "/*"				{ BEGIN(comment); }
@@ -31,6 +32,10 @@ int set_input_file(char * infile);
 (#include)(.)*\n    {}
                                               
 (#define)(.)*\n    	{}
+
+"#ifdef"(" ")+"__cplusplus"(.)*\n	{BEGIN(cplus);}
+<cplus>[^#]*				{}
+<cplus>"#endif"				{BEGIN(INITIAL);}
 
 "#ifdef"(.)*\n		{ }
 "#else"(.)*\n		{ }
@@ -138,7 +143,7 @@ L?\"(\\.|[^\\"])*\"	{ get_token_name(); return(STRING_LITERAL); }
 "?"					{ get_token_value(); return('?'); }
 "\\\n"				{ }
 	
-[ \t\v\n\f]			{ }
+[ \t\v\n\r\f]			{ }
 .					{ printf("error\n"); exit(0); }
 
 %%
