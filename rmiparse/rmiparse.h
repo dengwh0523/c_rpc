@@ -23,6 +23,7 @@ struct parameter {
 	int field_type;
 	int string;
 	int dir;
+	int para_num;
 };
 
 struct struct_info {

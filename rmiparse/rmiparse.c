@@ -561,7 +561,6 @@ int output_func_definition(FILE * fp, LIST_S * func_list) {
 
 		output(fp, "\tint i;\n");
 		output(fp, "\tint parse_len = 0;\n");
-		output(fp, "\tint para_num = 0;\n");
 		output(fp, "\tunsigned char *buf;\n\n");
 		output(fp, "\t// 参数列表\n");
 		output(fp, "\tint r_ret;\n");
@@ -581,13 +580,17 @@ int output_func_definition(FILE * fp, LIST_S * func_list) {
 		output(fp, "\n\t// 反序列化入参数\n");
 		for (j = 0; j < para_num; j++) {
 			struct parameter * para;
+			char buf[32] = {0};
 			para = list_at(&func_info->para_list, j);
 			if (PARA_IN != para->dir) {
 				continue;
 			}
 			output(fp, "\tparse_len += func_deserialize((unsigned char *)&r_");
 			output(fp, para->name);
-			output(fp, ", pbuf+parse_len, &func->para[para_num++]);\n");
+			output(fp, ", pbuf+parse_len, &func->para[");
+			sprintf(buf, "%d", para->para_num);
+			output(fp, buf);
+			output(fp, "]);\n");
 		}
 				
 		output(fp, "\n");
@@ -635,13 +638,17 @@ int output_func_definition(FILE * fp, LIST_S * func_list) {
 
 		for (j = 0; j < para_num; j++) {
 			struct parameter * para;
+			char buf[32] = {0};
 			para = list_at(&func_info->para_list, j);
 			if (PARA_OUT != para->dir) {
 				continue;
 			}
 			output(fp, "\tparse_len += func_serialize((unsigned char *)&r_");
 			output(fp, para->name);
-			output(fp, ", buf+parse_len, &func->para[para_num++]);\n");
+			output(fp, ", buf+parse_len, &func->para[");
+			sprintf(buf, "%d", para->para_num);
+			output(fp, buf);
+			output(fp, "]);\n");
 		}
 		output(fp, "\n\t*ret_len = parse_len;\n\n");
 		output(fp, "\treturn 0;\n");
@@ -724,6 +731,7 @@ int output_proxier_func(FILE * fp, LIST_S * func_list) {
 		output(fp, "\n\t// 序列化入参数\n");
 		for (j = 0; j < para_num; j++) {
 			struct parameter * para;
+			char buf[32] = {0};
 			para = list_at(&func_info->para_list, j);
 			if (PARA_IN != para->dir) {
 				continue;
@@ -731,7 +739,10 @@ int output_proxier_func(FILE * fp, LIST_S * func_list) {
 			output(fp, "\tlen += func_serialize((unsigned char *)");
 			output(fp, pointer2_str[para->pointer^0x1]);
 			output(fp, para->name);
-			output(fp, ", pbuf+len, &func_entry->para[para_num++]);\n");			
+			output(fp, ", pbuf+len, &func_entry->para[");
+			sprintf(buf, "%d", para->para_num);
+			output(fp, buf);
+			output(fp, "]);\n");			
 		}
 
 		output(fp, "\n\t// 远程调用\n");
@@ -744,6 +755,7 @@ int output_proxier_func(FILE * fp, LIST_S * func_list) {
 		output(fp, "\tparse_len += func_deserialize((unsigned char *)&r_ret, pdata+parse_len, &return_para[0]);\n");
 		for (j = 0; j < para_num; j++) {
 			struct parameter * para;
+			char buf[32] = {0};
 			para = list_at(&func_info->para_list, j);
 			if (PARA_OUT != para->dir) {
 				continue;
@@ -751,7 +763,10 @@ int output_proxier_func(FILE * fp, LIST_S * func_list) {
 			output(fp, "\tparse_len += func_deserialize((unsigned char *)");
 			output(fp, pointer2_str[para->pointer^0x1]);
 			output(fp, para->name);
-			output(fp, ", pdata+parse_len, &func_entry->para[para_num++]);\n");
+			output(fp, ", pdata+parse_len, &func_entry->para[");
+			sprintf(buf, "%d", para->para_num);
+			output(fp, buf);
+			output(fp, "]);\n");
 		}
 /*		output(fp, "\n\tfree(pdata);\n\n");*/
 		output(fp, "\n");

@@ -36,6 +36,7 @@ void * test_proc() {
 	//connect_cnt++;
 /*	return NULL;*/
 	for (n = 0; n < test_times; n++) {
+#if 1
 		gs_para1[0].a = -1;
 		gs_para1[0].b = -2;
 		gs_para1[0].c = 1.2;
@@ -88,12 +89,13 @@ void * test_proc() {
 			}
 			usleep(WAIT_TIME);
 		}
+	#endif
 		for (i = 0; i < MAX_NUM; i++) {
 			struct aaa aaa_buf;
 			struct bbb bbb_buf;
 			memset(&aaa_buf, 0, sizeof(aaa_buf));
 			memset(&bbb_buf, 0, sizeof(bbb_buf));
-			if (0 != get_para2(rmi, i, &aaa_buf, &bbb_buf)) {
+			if (0 != get_para2(rmi, &aaa_buf, &bbb_buf, i)) {
 				trace("get_para failed\n");
 				return NULL;
 			}

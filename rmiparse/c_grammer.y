@@ -517,6 +517,7 @@ parameter_declaration
 			return -1;
 		}
 		s_para.field_type = gen_field_type(&s_para);
+		s_para.para_num = list_size(&s_func.para_list);
 		
 		list_write_data(&s_func.para_list, (unsigned char *)&s_para, sizeof(s_para), 0);
 		memset(&s_para, 0, sizeof(s_para));
@@ -533,6 +534,7 @@ parameter_declaration
 		strcpy(s_para.type, g_type);
 		s_para.len = array_len;
 		sprintf(s_para.name, "para%d", list_size(&s_func.para_list));
+		s_para.para_num = list_size(&s_func.para_list);
 		if (0 == memcmp($1, "_IN", strlen("_IN"))) {
 			s_para.dir = PARA_IN;
 		} else if (0 == memcmp($1, "_OUT", strlen("_OUT"))) {

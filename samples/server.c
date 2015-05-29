@@ -47,7 +47,7 @@ int get_para(struct rmi * rmi, _IN int index, _OUT struct aaa *para1) {
 	return 0;
 }
 
-int get_para2(struct rmi * rmi, _IN int index, _OUT struct aaa *para1, _OUT struct bbb *para2) {
+int get_para2(struct rmi * rmi, _OUT struct aaa *para1, _OUT struct bbb *para2, _IN int index) {
 	if (index >= MAX_NUM) {
 		trace("para error\n");
 		return 1;

@@ -19,7 +19,7 @@ all: server client
 	
 rmiparse_middleman : test.h
 	../bin/rmiparse test.h
-	cp ../lib/librmi.so .
+	#cp ../lib/librmi.so .
 	@touch rmiparse_middleman
 
 server: rmiparse_middleman server.c

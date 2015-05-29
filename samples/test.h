@@ -21,7 +21,7 @@ struct bbb {
 int set_para(struct rmi * rmi, _IN int index, _IN struct aaa * para1); 
 int set_para2(struct rmi * rmi, _IN int index, _IN struct aaa * para1, _IN struct bbb * para2); 
 int get_para(struct rmi * rmi, _IN int index, _OUT struct aaa *para1);
-int get_para2(struct rmi * rmi, _IN int index, _OUT struct aaa *para1, _OUT struct bbb * para2);
+int get_para2(struct rmi * rmi, _OUT struct aaa *para1, _OUT struct bbb *para2, _IN int index);
 
 int get_version(struct rmi * rmi);
 int test1(struct rmi * rmi, _IN int, _OUT char * ddd);
