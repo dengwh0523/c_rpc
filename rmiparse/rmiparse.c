@@ -15,6 +15,7 @@
 
 LIST_S g_struct_list;
 LIST_S g_func_list;
+LIST_S g_newtype_list;
 extern int yyparse(); // 实现在x.tab.c 文件中
 extern void init(void);
 extern int set_input_file(char *infile);
@@ -44,6 +45,8 @@ struct field_type_s filed_type_map[] = {
 	MAKE_FIELD_TYPE(RMI_FIELD_SIGNED),
 };
 
+int is_struct_type(char * type);
+
 char * get_field_type(const int id) {
 	int n = STR_ARRAY_LEN(filed_type_map);
 	int i;
@@ -59,6 +62,7 @@ char * get_field_type(const int id) {
 int rpc_init() {	
 	memset(&g_struct_list, 0, sizeof(g_struct_list));
 	memset(&g_func_list, 0, sizeof(g_func_list));
+	memset(&g_newtype_list, 0, sizeof(g_newtype_list));	
 	
 	if (0 != list_init(&g_struct_list, BUF_SIZE, LIST_MAX_TIME, LIST_MAX_PACKET, LIST_MAX_USER)) {
 		trace("list_init failed\n");
@@ -66,6 +70,11 @@ int rpc_init() {
 	}
 	
 	if (0 != list_init(&g_func_list, BUF_SIZE, LIST_MAX_TIME, LIST_MAX_PACKET, LIST_MAX_USER)) {
+		trace("list_init failed\n");
+		return -1;
+	}
+	
+	if (0 != list_init(&g_newtype_list, BUF_SIZE, LIST_MAX_TIME, LIST_MAX_PACKET, LIST_MAX_USER)) {
 		trace("list_init failed\n");
 		return -1;
 	}
@@ -154,6 +163,8 @@ int rpc_finit() {
 		list_finit(&func_info->para_list);
 	}
 	list_finit(&g_func_list);
+
+	list_finit(&g_newtype_list);
 
 	return 0;
 }
@@ -306,8 +317,8 @@ int output_struct_member(FILE * fp, LIST_S * struct_list) {
 			// field type
 			output(fp, get_field_type(para->field_type));
 			output(fp, ", ");
-			// type name 
-			if (strstr(para->type, "struct")) {
+			// type name
+			if (is_struct_type(para->type)) {
 				output(fp, "\"");
 				output(fp, para->type);
 				output(fp, "\"");
@@ -368,11 +379,17 @@ int output_struct_member(FILE * fp, LIST_S * struct_list) {
 int output_struct_pair(FILE * fp, LIST_S * struct_list) {
 	int struct_num;
 	int i, j;
+	int newtype_num;
 
 	output(fp, "// struct pair\n");
 	output(fp, "struct struct_pair_entry struct_pair[] = {\n");
 
 	struct_num = list_size(struct_list);
+	if (struct_num <= 0) {	
+		output(fp, "\t{NULL, 0, NULL},\n");
+		output(fp, "};\n\n");
+		return 0;
+	}
 	for (i = 0; i < struct_num; i++) {
 		struct struct_info * struct_info;
 		struct_info = list_at(struct_list, i);		
@@ -388,7 +405,25 @@ int output_struct_pair(FILE * fp, LIST_S * struct_list) {
 		output(fp, struct_info->name);
 		output(fp, "},\n");
 	}
-	output(fp, "\t{NULL, 0, NULL},\n");
+
+	newtype_num = list_size(&g_newtype_list);
+	for (i = 0; i < newtype_num; i++) {
+		struct newtype_info * newtype;
+		newtype = list_at(&g_newtype_list, i);
+		if (0 != strcmp(newtype->orig_type, "struct")) {	
+			output(fp, "\t{");
+			output(fp, "\"");
+			output(fp, newtype->new_type);
+			output(fp, "\"");
+			output(fp, ", ");
+			output(fp, "STR_ARRAY_LEN(struct_");
+			output(fp, newtype->orig_name);
+			output(fp, "), ");
+			output(fp, "struct_");		
+			output(fp, newtype->orig_name);
+			output(fp, "},\n");
+		}
+	}
 	output(fp, "};\n\n");
 
 	return 0;
@@ -416,7 +451,7 @@ int output_func_para(FILE * fp, LIST_S * func_list) {
 			output(fp, "\t{0, ");
 			output(fp, get_field_type(para->field_type));
 			output(fp, ", ");
-			if (strstr(para->type, "struct")) {
+			if (is_struct_type(para->type)) {
 				output(fp, "\"");
 				output(fp, para->type);
 				output(fp, "\"");
@@ -870,7 +905,7 @@ int gen_field_type(struct parameter * para) {
 	}
 
 	// struct
-	if (strstr(para->type, "struct")) {	
+	if (is_struct_type(para->type)) {	
 		return RMI_FIELD_LEN;
 	}
 
@@ -886,5 +921,19 @@ int gen_field_type(struct parameter * para) {
 	} else {
 		return RMI_FIELD_SIGNED;
 	}	
+}
+
+static int check_newtype(void * src, void * dst) {
+	struct newtype_info * dst_info = (struct newtype_info *)dst;
+	return strcmp(src, dst_info->new_type);
+}
+
+int is_struct_type(char * type) {
+	struct newtype_info * newtype;
+	newtype = (struct newtype_info *)list_find_it(&g_newtype_list, (void *)type, check_newtype);
+	if (newtype) {
+		type = newtype->orig_type;
+	}
+	return strstr(type, "struct")!=NULL;
 }
 

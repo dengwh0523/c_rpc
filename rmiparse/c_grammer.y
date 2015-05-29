@@ -14,14 +14,20 @@ static int array_len;	// 数组长度
 static struct parameter s_para; // 用来存储当前正解析到的参数信息
 static struct struct_info s_struct; // 用来存储当前正解析到的结构体信息
 static struct func_info s_func; // 用来存储当前正解析到的函数信息
+static struct newtype_info s_newtype;
 
 int is_func = 0;
+int is_typedef = 0;
+int is_struct_def = 0;
 
 void init(void);
+void write_func_info(char *);
+void write_struct_info(void);
+void write_newtype_info(void);
 %}
 
 %token <val> CONSTANT
-%token <name> IDENTIFIER STRING_LITERAL SIZEOF
+%token <name> IDENTIFIER STRING_LITERAL SIZEOF NEWTYPE
 %token <name> PTR_OP INC_OP DEC_OP LEFT_OP RIGHT_OP LE_OP GE_OP EQ_OP NE_OP
 %token <name> AND_OP OR_OP MUL_ASSIGN DIV_ASSIGN MOD_ASSIGN ADD_ASSIGN
 %token <name> SUB_ASSIGN LEFT_ASSIGN RIGHT_ASSIGN AND_ASSIGN
@@ -186,19 +192,14 @@ declaration
 	: declaration_specifiers ';'
 	{
 		//printf("111\n");
+		write_struct_info();
 	}
 	| declaration_specifiers init_declarator_list ';'
 	{
 		//printf("222\n");
-		if (is_func) {
-			strcat(s_func.ret_type, $1);
-			s_func.func_id = crc32(s_func.func_name, strlen(s_func.func_name));
-			list_write_data(&g_func_list, (unsigned char *)&s_func, sizeof(s_func), 0);
-			
-			memset(&s_func, 0, sizeof(s_func));
-			list_init(&s_func.para_list, BUF_SIZE, LIST_MAX_TIME, LIST_MAX_PACKET, LIST_MAX_USER);
-		}
-		is_func = 0;
+		write_func_info($1);
+		write_struct_info();
+		write_newtype_info();
 	}
 	;
 
@@ -208,6 +209,7 @@ declaration_specifiers
 	}
 	| storage_class_specifier declaration_specifiers
 	{
+		is_typedef = 1;
 	}
 	| type_specifier
 	{
@@ -305,22 +307,34 @@ type_specifier
 	{
 	}
 	| TYPE_NAME
+	| NEWTYPE
+	{
+		memset(g_type, 0, sizeof(g_type));
+		strcat(g_type, $1);
+	}
 	;
 
 struct_or_union_specifier
 	: struct_or_union IDENTIFIER '{' struct_declaration_list '}' 
 	{
+		strcpy(g_type, $1);
+		strcat(g_type, " ");
+		strcat(g_type, $2);
+
+		strcpy(s_newtype.orig_name, $2);
+
 		strcpy(s_struct.type, $1);
 		strcat(s_struct.type, " ");
 		strcat(s_struct.type, $2);
 		strcpy(s_struct.name, $2);
-		
-		list_write_data(&g_struct_list, (unsigned char *)&s_struct, sizeof(s_struct), 0);
-		
-		memset(&s_struct, 0, sizeof(s_struct));
-		list_init(&s_struct.para_list, BUF_SIZE, LIST_MAX_TIME, LIST_MAX_PACKET, LIST_MAX_USER);
+
+		is_struct_def = 1;
 	}
 	| struct_or_union '{' struct_declaration_list '}'
+	{
+		strcpy(g_type, $1);
+		is_struct_def = 1;
+	}
 	| struct_or_union IDENTIFIER
 	{
 		strcpy(g_type, $1);
@@ -676,8 +690,47 @@ void init() {
 	memset(g_type, 0, sizeof(g_type));
 	memset(&s_para, 0, sizeof(s_para));
 	memset(&s_struct, 0, sizeof(s_struct));
+	memset(&s_newtype, 0, sizeof(s_newtype));
 	list_init(&s_struct.para_list, BUF_SIZE, LIST_MAX_TIME, LIST_MAX_PACKET, LIST_MAX_USER);
 	memset(&s_func, 0, sizeof(s_func));
 	list_init(&s_func.para_list, BUF_SIZE, LIST_MAX_TIME, LIST_MAX_PACKET, LIST_MAX_USER);
 	array_len = 1;
 }
+
+void write_func_info(char * ret_type) {
+	if (is_func) {
+		strcat(s_func.ret_type, ret_type);
+		s_func.func_id = crc32(s_func.func_name, strlen(s_func.func_name));
+		list_write_data(&g_func_list, (unsigned char *)&s_func, sizeof(s_func), 0);
+		
+		memset(&s_func, 0, sizeof(s_func));
+		list_init(&s_func.para_list, BUF_SIZE, LIST_MAX_TIME, LIST_MAX_PACKET, LIST_MAX_USER);
+	}
+	is_func = 0;
+}
+
+void write_struct_info() {
+	if (is_struct_def) {
+		if (0 == s_struct.name[0]) {
+			strcpy(s_struct.name, g_name);
+			strcpy(s_struct.type, g_name);
+		}
+		list_write_data(&g_struct_list, (unsigned char *)&s_struct, sizeof(s_struct), 0);
+		
+		memset(&s_struct, 0, sizeof(s_struct));
+		list_init(&s_struct.para_list, BUF_SIZE, LIST_MAX_TIME, LIST_MAX_PACKET, LIST_MAX_USER);
+	}
+	is_struct_def = 0;
+}
+
+void write_newtype_info() {		
+	if (is_typedef) {
+		strcpy(s_newtype.new_type, g_name);
+		strcpy(s_newtype.orig_type, g_type);
+
+		list_write_data(&g_newtype_list, (unsigned char *)&s_newtype, sizeof(s_newtype), 0);
+	}
+	memset(&s_newtype, 0, sizeof(s_newtype));
+	is_typedef = 0;
+}
+

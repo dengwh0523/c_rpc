@@ -31,6 +31,12 @@ struct struct_info {
 	LIST_S para_list;
 };
 
+struct newtype_info {
+	char new_type[64];
+	char orig_type[64];
+	char orig_name[64];
+};
+
 struct func_info {
 	char ret_type[64];
 	int pointer;
@@ -41,6 +47,7 @@ struct func_info {
 
 extern LIST_S g_struct_list;
 extern LIST_S g_func_list;
+extern LIST_S g_newtype_list;
 
 int gen_field_type(struct parameter * para);
 

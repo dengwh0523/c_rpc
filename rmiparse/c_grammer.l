@@ -9,6 +9,7 @@ IS			(u|U|l|L)*
 %{
 #include <stdio.h>
 #include "c_grammer.tab.h" 
+#include "rmiparse.h"
 
 void get_token_name();
 void get_token_value();
@@ -161,17 +162,20 @@ void get_token_value() {
 	yylval.val = atoi(yytext);
 }
 
+static int check_newtype(void * src, void * dst) {
+	struct newtype_info * dst_info = (struct newtype_info *)dst;
+	return strcmp(src, dst_info->new_type);
+}
+
 int check_type()
 {
 /*
 * pseudo code --- this is what it should check
-*
-*	if (yytext == type_name)
-*		return(TYPE_NAME);
-*
-*	return(IDENTIFIER);
 */
-
+	struct newtype_info * newtype;
+	newtype = (struct newtype_info *)list_find_it(&g_newtype_list, (void *)yytext, check_newtype);
+	if (newtype)
+		return(NEWTYPE);
 /*
 *	it actually will only return IDENTIFIER
 */

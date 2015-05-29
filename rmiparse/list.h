@@ -79,10 +79,11 @@ int list_read_data(LIST_S * plist, unsigned char * pbuf, int max_len);
 int list_user_read(LIST_S * plist, char * user_name, unsigned char * pbuf, int max_len);
 
 int list_size(LIST_S * plist);
-void * list_at(LIST_S * plist, int index);
+void * list_at(LIST_S * plist, const int index);
 int list_erase(LIST_S * plist, const int index);
 int list_erase_it(LIST_S * plist, void * pbuf, LIST_CALLBACK cb);
 int list_operate_it(LIST_S * plist, LIST_CALLBACK cb);
+void * list_find_it(LIST_S * plist, void * pbuf, LIST_CALLBACK cb);
 
 // loopbuf
 int loopbuf_init(LOOPBUF_S * pstLoopbuf, unsigned char * pbuf, int len);

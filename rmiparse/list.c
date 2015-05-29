@@ -593,6 +593,20 @@ int list_operate_it(LIST_S * plist, LIST_CALLBACK cb) {
 	return 0;
 }
 
+void * list_find_it(LIST_S * plist, void * pbuf, LIST_CALLBACK cb) {
+	NODE_S * pnode;
+
+	pnode = plist->head;
+	while(pnode) {
+		if (0 == cb(pbuf, pnode->data)) {
+			return pnode->data;
+		}
+		pnode = pnode->next;
+	}
+
+	return NULL;
+}
+
 NODE_S * list_remove_it(LIST_S * plist, void * pbuf, LIST_CALLBACK cb) {
 	NODE_S * cur, * pre;
 
