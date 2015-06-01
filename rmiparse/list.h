@@ -12,8 +12,13 @@
 #define DEFAULT_MAX_PACKET	16
 #define USER_NAME_MAX_LEN	32
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct NODE_S {
 	struct NODE_S * next;
+	struct NODE_S * prev;
 	int len;
 	int use_cnt;
 	unsigned int create_time;
@@ -104,5 +109,9 @@ int pool_operate_it(POOL_S * pool, LIST_CALLBACK cb);
 int pool_erase_it(POOL_S * pool, void * pbuf, LIST_CALLBACK cb);
 
 #define to_list_node(ptr) (NODE_S *)((char*)ptr-sizeof(NODE_S))
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

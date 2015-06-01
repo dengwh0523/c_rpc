@@ -155,10 +155,12 @@ int list_add_tail(LIST_S * plist, NODE_S * pnode) {
 		return -1;
 	}
 	pnode->next = NULL;
+	pnode->prev = NULL;
 	if (NULL == plist->head) {
 		plist->head = pnode;
 		plist->tail = pnode;
 	} else {
+		pnode->prev = plist->tail;
 		plist->tail->next = pnode;
 		plist->tail = pnode;
 	}
@@ -174,8 +176,11 @@ int list_add_head(LIST_S * plist, NODE_S * pnode) {
 	}
 	
 	pnode->next = plist->head;
+	pnode->prev = NULL;
 	if (NULL == plist->head) {
 		plist->tail = pnode;
+	} else {
+		plist->head->prev = pnode;
 	}
 	plist->head = pnode;
 	plist->num++;
@@ -198,6 +203,8 @@ NODE_S * list_remove_head(LIST_S * plist) {
 	plist->head = plist->head->next;
 	if (NULL == plist->head) {
 		plist->tail = NULL;
+	} else {
+		plist->head->prev = NULL;
 	}
 	plist->num--;
 
@@ -220,9 +227,15 @@ NODE_S * list_remove_tail(LIST_S * plist) {
 		plist->head = NULL;
 		plist->tail = NULL;
 	} else {
+	#if 0
 		for (pre = pnode = plist->head; NULL != pnode->next; pre = pnode, pnode = pnode->next);
 		pre->next = NULL;
 		plist->tail = pre;
+	#else
+		pnode = plist->tail;
+		plist->tail = pnode->prev;
+		plist->tail->next = NULL;
+	#endif
 	}
 	
 	plist->num--;
@@ -243,7 +256,7 @@ void list_free_node(LIST_S * plist, NODE_S * pnode, int flag) {
 	}
 }
 
-int list_delete_node(LIST_S * plist, NODE_S * pnode) {
+int list_remove_node(LIST_S * plist, NODE_S * pnode) {
 	if (NULL == plist || NULL == pnode) {
 		trace("para error\n");
 		return -1;
@@ -253,8 +266,11 @@ int list_delete_node(LIST_S * plist, NODE_S * pnode) {
 		plist->head = plist->head->next;
 		if (NULL == plist->head) {
 			plist->tail = NULL;
+		} else {
+			plist->head->prev = NULL;
 		}
 	} else {
+	#if 0
 		NODE_S * pre, * cur;
 		for (pre = cur = plist->head; NULL != cur; pre = cur, cur = cur->next) {
 			if (pnode == cur) {
@@ -270,9 +286,23 @@ int list_delete_node(LIST_S * plist, NODE_S * pnode) {
 		if (NULL == pre->next) {
 			plist->tail = pre;
 		}
+	#else
+		pnode->prev->next = pnode->next;
+		if (pnode->next) {
+			pnode->next->prev = pnode->prev;
+		} else {
+			plist->tail = pnode->prev;
+		}
+	#endif
 	}
-	list_free_node(plist, pnode, LIST_FORCE_FREE);
 	plist->num--;
+
+	return 0;
+}
+
+int list_delete_node(LIST_S * plist, NODE_S * pnode) {
+	list_remove_node(plist, pnode);
+	list_free_node(plist, pnode, LIST_FORCE_FREE);;
 
 	return 0;
 }
@@ -612,6 +642,7 @@ void * list_find_it(LIST_S * plist, void * pbuf, LIST_CALLBACK cb) {
 }
 
 NODE_S * list_remove_it(LIST_S * plist, void * pbuf, LIST_CALLBACK cb) {
+#if 0
 	NODE_S * cur, * pre;
 
 	pre = cur = plist->head;
@@ -637,8 +668,14 @@ NODE_S * list_remove_it(LIST_S * plist, void * pbuf, LIST_CALLBACK cb) {
 	}
 
 	return NULL;
-}
+#else
+	unsigned char * pdata;
+	pdata = list_find_it(plist, pbuf, cb);
+	list_remove_node(plist, to_list_node(pdata));
 
+	return to_list_node(pdata);
+#endif
+}
 
 int list_erase_it(LIST_S * plist, void * pbuf, LIST_CALLBACK cb) {
 	NODE_S * pnode;

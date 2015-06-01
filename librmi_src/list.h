@@ -18,6 +18,7 @@ extern "C" {
 
 typedef struct NODE_S {
 	struct NODE_S * next;
+	struct NODE_S * prev;
 	int len;
 	int use_cnt;
 	unsigned int create_time;
