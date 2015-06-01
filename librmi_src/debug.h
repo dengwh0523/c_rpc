@@ -75,8 +75,14 @@ char * fast_for_each(char * buf, int len, int step, void * id, for_each_cb cb);
 
 #define FOR_EACH(table, type, para, func) \
 	(type *)for_each((char *)table, STR_ARRAY_LEN(table), sizeof(type), (void *)para, (for_each_cb)func)
+	
+#define FOR_EACH_WITH_NUM(table, num, type, para, func) \
+	(type *)for_each((char *)table, num, sizeof(type), (void *)para, (for_each_cb)func)
+	
+#define FAST_FOR_EACH(table, type, para, func) \
+	(type *)fast_for_each((char *)table, STR_ARRAY_LEN(table), sizeof(type), (void *)para, (for_each_cb)func)
 
-#define FAST_FOR_EACH(table, num, type, para, func) \
+#define FAST_FOR_EACH_WITH_NUM(table, num, type, para, func) \
 	(type *)fast_for_each((char *)table, num, sizeof(type), (void *)para, (for_each_cb)func)
 
 #ifdef __cplusplus

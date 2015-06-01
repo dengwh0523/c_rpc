@@ -90,7 +90,7 @@ int main(int argc, char * argv[]) {
     act.sa_flags = SA_NOMASK;
     sigaction(SIGPIPE, &act, NULL);
 
-	rmi_init(&server_rmi);
+	RMI_INIT_SERVER(&server_rmi, test);
 	rmi_server_start(&server_rmi, port);
 
 	getchar();

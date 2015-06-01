@@ -18,16 +18,16 @@ LIBS := ../lib/librmi.a -lpthread -lrt
 all: server client
 	
 rmiparse_middleman : test.h
-	../bin/rmiparse test.h
+	../bin/rmiparse test.h test
 	#cp ../lib/librmi.so .
 	@touch rmiparse_middleman
 
 server: rmiparse_middleman server.c
-	$(CC) -o $@ server.c stub.c $(LIBS) $(LIB_DIR) $(INC_DIRS) $(CFLAG)
+	$(CC) -o $@ server.c test_stub.c $(LIBS) $(LIB_DIR) $(INC_DIRS) $(CFLAG)
 	
 client: rmiparse_middleman client.c
-	$(CC) -o $@ client.c proxier.c $(LIBS) $(LIB_DIR) $(INC_DIRS) $(CFLAG)
+	$(CC) -o $@ client.c test_proxier.c $(LIBS) $(LIB_DIR) $(INC_DIRS) $(CFLAG)
 	
 clean:
 	-rm -f server client *.so *.a
-	-rm stub.c proxier.c rmiparse_middleman
+	-rm test_stub.c test_proxier.c rmiparse_middleman

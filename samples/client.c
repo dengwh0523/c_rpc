@@ -26,7 +26,7 @@ void * test_proc() {
 	int n;
 	
 	rmi = &client_rmi;
-	rmi_init(rmi);
+	RMI_INIT_CLIENT(rmi, test);
 	rmi_set_timeout(rmi, 500);
 	if (0 != rmi_client_start(rmi, server_ip, server_port)) {
 		trace("rmi_client_start failed\n");

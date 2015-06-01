@@ -9,6 +9,7 @@
 
 #define DEFAULT_STUB_H	"stub.h"
 #define DEFAULT_STUB_C	"stub.c"
+#define DEFAULT_PROXIER_H	"proxier.h"
 #define DEFAULT_PROXIER_C	"proxier.c"
 
 #define MAKE_FIELD_TYPE(field_type) {field_type, #field_type}
@@ -25,11 +26,12 @@ char * pointer2_str[] = {"", "&"};
 
 // file
 char * infile = NULL;
+char * model_id = NULL;
 char * stub_h = DEFAULT_STUB_H;
 char * stub_c = DEFAULT_STUB_C;
 char * proxier_c = DEFAULT_PROXIER_C;
 
-FILE * stub_h_fp = NULL;
+FILE * model_fp = NULL;
 FILE * stub_c_fp = NULL;
 FILE * proxier_c_fp = NULL;
 
@@ -59,7 +61,9 @@ char * get_field_type(const int id) {
 	return NULL;
 }
 
-int rpc_init() {	
+int rpc_init() {
+	char name[64];
+	
 	memset(&g_struct_list, 0, sizeof(g_struct_list));
 	memset(&g_func_list, 0, sizeof(g_func_list));
 	memset(&g_newtype_list, 0, sizeof(g_newtype_list));	
@@ -81,19 +85,28 @@ int rpc_init() {
 	
 	init();
 
-/*	stub_h_fp = fopen(stub_h, "wb");*/
-/*	if (NULL == stub_h_fp) {*/
-/*		trace("open file[%s] failed\n", stub_h);*/
-/*		return -1;*/
-/*	}*/
-	stub_c_fp = fopen(stub_c, "wb");
-	if (NULL == stub_c_fp) {
-		trace("open file[%s] failed\n", stub_c);
+	memset(name, 0, sizeof(name));
+	sprintf(name, "%s_%s", model_id, "rmi.h");
+	model_fp = fopen(name, "wb");
+	if (NULL == model_fp) {
+		trace("open file[%s] failed\n", name);
 		return -1;
 	}
-	proxier_c_fp = fopen(proxier_c, "wb");
+	memset(name, 0, sizeof(name));
+	sprintf(name, "%s_%s", model_id, DEFAULT_STUB_C);
+	
+	stub_c_fp = fopen(name, "wb");
+	if (NULL == stub_c_fp) {
+		trace("open file[%s] failed\n", name);
+		return -1;
+	}
+	
+	memset(name, 0, sizeof(name));
+	sprintf(name, "%s_%s", model_id, DEFAULT_PROXIER_C);
+	
+	proxier_c_fp = fopen(name, "wb");
 	if (NULL == proxier_c_fp) {
-		trace("open file[%s] failed\n", proxier_c);
+		trace("open file[%s] failed\n", name);
 		return -1;
 	}
 
@@ -296,7 +309,7 @@ int output_struct_member(FILE * fp, LIST_S * struct_list) {
 		struct struct_info * struct_info;
 		int para_num;		
 		struct_info = list_at(struct_list, i);
-		output(fp, "struct struct_entry struct_");
+		output(fp, "static struct struct_entry struct_");
 		output(fp, struct_info->name);
 		output(fp, "[] = {\n");
 		
@@ -382,7 +395,7 @@ int output_struct_pair(FILE * fp, LIST_S * struct_list) {
 	int newtype_num;
 
 	output(fp, "// struct pair\n");
-	output(fp, "struct struct_pair_entry struct_pair[] = {\n");
+	output(fp, "static struct struct_pair_entry struct_pair[] = {\n");
 
 	struct_num = list_size(struct_list);
 	if (struct_num <= 0) {	
@@ -440,7 +453,7 @@ int output_func_para(FILE * fp, LIST_S * func_list) {
 		struct func_info * func_info;
 		int para_num;		
 		func_info = list_at(func_list, i);
-		output(fp, "struct struct_entry ");
+		output(fp, "static struct struct_entry ");
 		output(fp, func_info->func_name);
 		output(fp, "_para[] = {\n");
 		
@@ -473,7 +486,7 @@ int output_func_para(FILE * fp, LIST_S * func_list) {
 
 int output_return_para(FILE * fp) {	
 	output(fp, "// funtion return parameter\n");
-	output(fp, "struct struct_entry return_para[] = {\n");
+	output(fp, "static struct struct_entry return_para[] = {\n");
 	output(fp, "	{0, RMI_FIELD_SIGNED, NULL, 1, sizeof(int), 0},\n");
 	output(fp, "};\n\n");
 
@@ -493,7 +506,7 @@ int output_func_interface(FILE * fp, LIST_S * func_list) {
 		func_info = list_at(func_list, i);
 /*		output(fp, func_info->ret_type);*/
 /*		output(fp, pointer_str[func_info->pointer]);*/
-		output(fp, "int invoke_func_");
+		output(fp, "static int invoke_func_");
 		sprintf(buf, "%08x", func_info->func_id);
 		output(fp, buf);
 		output(fp, "(struct rmi* rmi, struct func_entry * func, const unsigned char * pbuf, const int len, unsigned char ** ret_buf, int * ret_len);\n");
@@ -509,7 +522,7 @@ int output_func_map(FILE * fp, LIST_S * func_list, int flag) {
 	int i, j;
 
 	output(fp, "// function map\n");
-	output(fp, "struct func_entry func_table[] = {\n");
+	output(fp, "static struct func_entry func_table[] = {\n");
 	
 	func_num = list_size(func_list);
 	for (i = 0; i < func_num; i++) {
@@ -536,10 +549,25 @@ int output_func_map(FILE * fp, LIST_S * func_list, int flag) {
 
 	output(fp, "};\n\n");
 
-	output(fp, "const int func_num = STR_ARRAY_LEN(func_table);\n");
-	output(fp, "const int struct_num = STR_ARRAY_LEN(struct_pair);\n\n");
+	output(fp, "static const int func_num = STR_ARRAY_LEN(func_table);\n");
+	output(fp, "static const int struct_num = STR_ARRAY_LEN(struct_pair);\n\n");
 
 	return 0;
+}
+
+int output_rmi_table(FILE * fp, char * type) {
+	output(fp, "// set rmi table\n");
+	output(fp, "void ");
+	output(fp, model_id);
+	output(fp, "_set_");
+	output(fp, type);
+	output(fp, "_table(struct rmi * rmi) {\n");
+	output(fp, "\trmi->struct_num = struct_num;\n"
+			   "\trmi->struct_pair = struct_pair;\n"
+			   "\trmi->func_num = func_num;\n"
+			   "\trmi->func_table = func_table;\n"
+			   "\trmi->return_para = return_para;\n");
+	output(fp, "}\n\n");
 }
 
 int output_func_definition(FILE * fp, LIST_S * func_list) {
@@ -554,7 +582,7 @@ int output_func_definition(FILE * fp, LIST_S * func_list) {
 		int para_num;
 		char buf[16] = {0};
 		func_info = list_at(func_list, i);
-		output(fp, "int invoke_func_");
+		output(fp, "static int invoke_func_");
 		sprintf(buf, "%08x", func_info->func_id);
 		output(fp, buf);
 		output(fp, "(struct rmi* rmi, struct func_entry * func, const unsigned char * pbuf, const int len, unsigned char ** ret_buf, int * ret_len) {\n");
@@ -585,7 +613,7 @@ int output_func_definition(FILE * fp, LIST_S * func_list) {
 			if (PARA_IN != para->dir) {
 				continue;
 			}
-			output(fp, "\tparse_len += func_deserialize((unsigned char *)&r_");
+			output(fp, "\tparse_len += func_deserialize(rmi, (unsigned char *)&r_");
 			output(fp, para->name);
 			output(fp, ", pbuf+parse_len, &func->para[");
 			sprintf(buf, "%d", para->para_num);
@@ -634,7 +662,7 @@ int output_func_definition(FILE * fp, LIST_S * func_list) {
 		output(fp, "\t	return -1;\n");
 		output(fp, "\t}\n");
 		output(fp, "\tbuf = *ret_buf + sizeof(struct rmi_header);\n");
-		output(fp, "\tparse_len += func_serialize((unsigned char *)&r_ret, buf+parse_len, &return_para[0]);\n");
+		output(fp, "\tparse_len += func_serialize(rmi, (unsigned char *)&r_ret, buf+parse_len, &return_para[0]);\n");
 
 		for (j = 0; j < para_num; j++) {
 			struct parameter * para;
@@ -643,7 +671,7 @@ int output_func_definition(FILE * fp, LIST_S * func_list) {
 			if (PARA_OUT != para->dir) {
 				continue;
 			}
-			output(fp, "\tparse_len += func_serialize((unsigned char *)&r_");
+			output(fp, "\tparse_len += func_serialize(rmi, (unsigned char *)&r_");
 			output(fp, para->name);
 			output(fp, ", buf+parse_len, &func->para[");
 			sprintf(buf, "%d", para->para_num);
@@ -722,7 +750,7 @@ int output_proxier_func(FILE * fp, LIST_S * func_list) {
 		output(fp, "\n\t// 参数列表\n");
 		output(fp, "\tint r_ret;\n\n");
 
-		output(fp, "\tfunc_entry = get_func_entry(func_id);\n");
+		output(fp, "\tfunc_entry = get_func_entry(rmi, func_id);\n");
 		output(fp, "\tif (NULL == func_entry) {\n");
 		output(fp, "\t	trace(\"no such function\\n\");\n");
 		output(fp, "\t	return -1;\n");
@@ -736,7 +764,7 @@ int output_proxier_func(FILE * fp, LIST_S * func_list) {
 			if (PARA_IN != para->dir) {
 				continue;
 			}
-			output(fp, "\tlen += func_serialize((unsigned char *)");
+			output(fp, "\tlen += func_serialize(rmi, (unsigned char *)");
 			output(fp, pointer2_str[para->pointer^0x1]);
 			output(fp, para->name);
 			output(fp, ", pbuf+len, &func_entry->para[");
@@ -752,7 +780,7 @@ int output_proxier_func(FILE * fp, LIST_S * func_list) {
 		output(fp, "\t}\n");
 		
 		output(fp, "\n\t// 反序列化出参数\n");
-		output(fp, "\tparse_len += func_deserialize((unsigned char *)&r_ret, pdata+parse_len, &return_para[0]);\n");
+		output(fp, "\tparse_len += func_deserialize(rmi, (unsigned char *)&r_ret, pdata+parse_len, &return_para[0]);\n");
 		for (j = 0; j < para_num; j++) {
 			struct parameter * para;
 			char buf[32] = {0};
@@ -760,7 +788,7 @@ int output_proxier_func(FILE * fp, LIST_S * func_list) {
 			if (PARA_OUT != para->dir) {
 				continue;
 			}
-			output(fp, "\tparse_len += func_deserialize((unsigned char *)");
+			output(fp, "\tparse_len += func_deserialize(rmi, (unsigned char *)");
 			output(fp, pointer2_str[para->pointer^0x1]);
 			output(fp, para->name);
 			output(fp, ", pdata+parse_len, &func_entry->para[");
@@ -783,15 +811,31 @@ int output_proxier_func(FILE * fp, LIST_S * func_list) {
 	return 0;
 }
 	
-int generate_stub_h(LIST_S * struct_list, LIST_S * func_list, FILE * fp) {
-	output(fp, "#include \"rmi.h\"\n\n");
-	output(fp, "#ifndef __STUB_H__\n");
-	output(fp, "#define __STUB_H__\n\n");
+int generate_model_h(FILE * fp) {
+	char buf[32] = {0};
+	sprintf(buf, "__%s_RMI_H__", model_id);
+	output(fp, "#ifndef ");
+	output(fp, buf);
+	output(fp, "\n");
+	output(fp, "#define ");
+	output(fp, buf);
+	output(fp, "\n");
+	
+	output(fp, "\n");
+	output_cplus_start(fp);
 
-	output_struct_info(fp, struct_list);
-	output_func_info(fp, func_list);
+	output(fp, "void ");
+	output(fp, model_id);
+	output(fp, "_set_server_table(struct rmi *);\n");
 
-	output(fp, "\n#endif\n");
+	output(fp, "void ");
+	output(fp, model_id);
+	output(fp, "_set_client_table(struct rmi *);\n");
+		
+	output(fp, "\n");
+	output_cplus_end(fp);
+
+	output(fp, "#endif\n\n");
 
 	fclose(fp);
 	return 0;
@@ -806,6 +850,7 @@ int generate_stub_c(LIST_S * struct_list, LIST_S * func_list, FILE * fp) {
 	output_return_para(fp);
 	output_func_interface(fp, func_list);
 	output_func_map(fp, func_list, 1);
+	output_rmi_table(fp, "server");
 	
 	output_func_definition(fp, func_list);
 	output_cplus_end(fp);
@@ -823,6 +868,7 @@ int generate_proxier_c(LIST_S * struct_list, LIST_S * func_list, FILE * fp) {
 	output_return_para(fp);
 /*	output_func_interface(fp, func_list);*/
 	output_func_map(fp, func_list, 0);
+	output_rmi_table(fp, "client");
 	
 	output_proxier_func(fp, func_list);
 	output_cplus_end(fp);
@@ -879,13 +925,18 @@ int main(int argc, char * argv[]) {
 	int i, j;
 	int ret;
 
-	if (argc > 1) {
-		infile = argv[1];
-		if (0 != set_input_file(infile)) {
-			trace("set_input_file %s failed\n", infile);
-			return -1;
-		}
+	if (argc != 3) {
+		printf("usage: rmiparse infile id\n");
+		return -1;
 	}
+	
+	infile = argv[1];
+	if (0 != set_input_file(infile)) {
+		trace("set_input_file %s failed\n", infile);
+		return -1;
+	}
+
+	model_id = argv[2];
 
 	if (0 != rpc_init()) {
 		trace("rpc_init failed\n");
@@ -900,7 +951,7 @@ int main(int argc, char * argv[]) {
 
 	func_sort(&g_func_list);
 
-	// generate_stub_h(&g_struct_list, &g_func_list, stub_h_fp);
+	generate_model_h(model_fp);
 	generate_stub_c(&g_struct_list, &g_func_list, stub_c_fp);
 	generate_proxier_c(&g_struct_list, &g_func_list, proxier_c_fp);
 

@@ -104,6 +104,13 @@ struct rmi {
 	char server_ip[16];
 	unsigned short server_port;
 	void * user_data;
+
+	// support multi server/client
+	int struct_num;
+	struct struct_pair_entry * struct_pair;
+	int func_num;
+	struct func_entry * func_table;
+	struct struct_entry * return_para;
 };
 
 struct func_entry {
@@ -113,11 +120,19 @@ struct func_entry {
 	struct struct_entry * para;
 };
 
-extern const int struct_num;
-extern struct struct_pair_entry struct_pair[];
-extern const int func_num;
-extern struct func_entry func_table[];
-extern struct struct_entry return_para[];
+/*#define INCLUDE_RMI_MODEL(ID)	(#include "ID##_rmi.h")*/
+
+#define RMI_INIT_SERVER(server_rmi, ID) \
+do {\
+	rmi_init(server_rmi);\
+	ID##_set_server_table(server_rmi);\
+} while(0)
+
+#define RMI_INIT_CLIENT(client_rmi, ID) \
+do {\
+	rmi_init(client_rmi);\
+	ID##_set_client_table(client_rmi);\
+} while(0)
 
 int rmi_init(struct rmi * rmi);
 int rmi_finit(struct rmi * rmi);
@@ -134,9 +149,9 @@ int rmi_server_close(struct rmi * rmi);
 int rmi_client_start(struct rmi * rmi, char * host, unsigned short port);
 int rmi_client_close(struct rmi * rmi);
 
-struct func_entry * get_func_entry(int id);
-int func_serialize(const unsigned char * pdata, unsigned char * pbuf, const struct struct_entry * entry_in);
-int func_deserialize(unsigned char * pdata, const unsigned char * pbuf, const struct struct_entry * entry_in);
+struct func_entry * get_func_entry(struct rmi * rmi, int id);
+int func_serialize(struct rmi * rmi, const unsigned char * pdata, unsigned char * pbuf, const struct struct_entry * entry_in);
+int func_deserialize(struct rmi * rmi, unsigned char * pdata, const unsigned char * pbuf, const struct struct_entry * entry_in);
 int find_response(struct rmi_header * hdr, struct rmi_header * r_hdr);
 void gen_header(struct rmi_header * hdr, int id, int len, int seq);
 int invoke(struct rmi * rmi, int id, unsigned char * pbuf, int len, unsigned char ** r_buf, int * r_len);

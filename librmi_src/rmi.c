@@ -62,18 +62,15 @@ int rmi_set_max_connect_num(struct rmi * rmi, int num) {
 	return 0;
 }
 
-static struct struct_pair_entry * get_struct_entry(char * struct_name) {
-	int i;
-	for (i = 0; i < struct_num; i++) {
-		if (0 == strcmp(struct_name, struct_pair[i].name)) {
-			return &struct_pair[i];
-		}
-	}
-	
-	return NULL;
+static int struct_name_cmp(void * data, void * id) {
+	return strcmp(id, ((struct struct_pair_entry *)data)->name);
 }
 
-int func_id_cmp(void * data, void * id) {
+static struct struct_pair_entry * get_struct_entry(struct rmi * rmi, char * struct_name) {
+	return FOR_EACH_WITH_NUM(rmi->struct_pair, rmi->struct_num, struct struct_pair_entry, struct_name, struct_name_cmp);
+}
+
+static int func_id_cmp(void * data, void * id) {
 	unsigned int dst_id = (unsigned int)id;
 	unsigned int src_id = ((struct func_entry *)data)->func_id;
 	if (dst_id == src_id) {
@@ -83,8 +80,8 @@ int func_id_cmp(void * data, void * id) {
 	return (dst_id>src_id) ? 1 : -1;
 }
 
-struct func_entry * get_func_entry(int id) {
-	return FAST_FOR_EACH(func_table, func_num, struct func_entry, id, func_id_cmp);
+struct func_entry * get_func_entry(struct rmi * rmi, int id) {
+	return FAST_FOR_EACH_WITH_NUM(rmi->func_table, rmi->func_num, struct func_entry, id, func_id_cmp);
 }
 
 static int serialize_rmi_header(struct rmi_header * hdr) {
@@ -270,14 +267,14 @@ int get_len(unsigned char * pdata, const int max_len, const unsigned char * pbuf
 	return r_len;
 }
 
-int serialize(const unsigned char * pdata, unsigned char * pbuf, const struct struct_entry * entry_in) {
+int serialize(struct rmi * rmi, const unsigned char * pdata, unsigned char * pbuf, const struct struct_entry * entry_in) {
 	int i, j;
 	struct struct_pair_entry * pair_entry;
 	const struct struct_entry * entry;
 	int member_num;
 	int len = 0;
 	
-	if (entry_in->type_name && (pair_entry = get_struct_entry(entry_in->type_name))) {
+	if (entry_in->type_name && (pair_entry = get_struct_entry(rmi, entry_in->type_name))) {
 		entry = pair_entry->entry;
 		member_num = pair_entry->member_num;
 	} else {
@@ -301,7 +298,7 @@ int serialize(const unsigned char * pdata, unsigned char * pbuf, const struct st
 					trace("malloc error\n");
 					return -1;
 				}
-				str_len = serialize(base, buf, &entry[i]);
+				str_len = serialize(rmi, base, buf, &entry[i]);
 				len += set_len(buf, str_len, pbuf+len);
 				free(buf);
 			} else {
@@ -330,7 +327,7 @@ int serialize(const unsigned char * pdata, unsigned char * pbuf, const struct st
 	return len;
 }
 
-int deserialize(unsigned char * pdata, const unsigned char * pbuf, const int enc_len, const struct struct_entry * entry_in) {
+int deserialize(struct rmi * rmi, unsigned char * pdata, const unsigned char * pbuf, const int enc_len, const struct struct_entry * entry_in) {
 	int i;
 	struct struct_pair_entry * pair_entry;
 	const struct struct_entry * entry;
@@ -344,7 +341,7 @@ int deserialize(unsigned char * pdata, const unsigned char * pbuf, const int enc
 	int field_cnt = 0;
 	int offset = 0;
 	
-	if (entry_in->type_name && (pair_entry = get_struct_entry(entry_in->type_name))) {
+	if (entry_in->type_name && (pair_entry = get_struct_entry(rmi, entry_in->type_name))) {
 		entry = pair_entry->entry;
 		member_num = pair_entry->member_num;
 	} else {
@@ -402,7 +399,7 @@ int deserialize(unsigned char * pdata, const unsigned char * pbuf, const int enc
 					if (entry[i].type_name) {
 						int str_len;
 						len += get_varint((unsigned char *)&str_len, sizeof(str_len), pbuf+len);
-						len += deserialize(base, pbuf+len, str_len, &entry[i]);
+						len += deserialize(rmi, base, pbuf+len, str_len, &entry[i]);
 					} else {
 						memset(base, 0, entry[i].type_len);
 						len += get_len(base, entry[i].type_len-1, pbuf+len);
@@ -424,18 +421,18 @@ int deserialize(unsigned char * pdata, const unsigned char * pbuf, const int enc
 	return len;
 }
 
-int func_serialize(const unsigned char * pdata, unsigned char * pbuf, const struct struct_entry * entry_in) {
+int func_serialize(struct rmi * rmi, const unsigned char * pdata, unsigned char * pbuf, const struct struct_entry * entry_in) {
 	int len;
-	len = serialize(pdata, pbuf+4, entry_in);
+	len = serialize(rmi, pdata, pbuf+4, entry_in);
 	*(int *)pbuf = htonl(len);
 	len += 4;
 	return len;
 }
 
-int func_deserialize(unsigned char * pdata, const unsigned char * pbuf, const struct struct_entry * entry_in) {
+int func_deserialize(struct rmi * rmi, unsigned char * pdata, const unsigned char * pbuf, const struct struct_entry * entry_in) {
 	int len;
 	len = ntohl(*(int *)pbuf);
-	len = deserialize(pdata, pbuf+4, len, entry_in);
+	len = deserialize(rmi, pdata, pbuf+4, len, entry_in);
 	len += 4;
 	return len;
 }
@@ -639,6 +636,13 @@ void * rmi_listen_thread(void * arg) {
 		client_rmi->timeout = rmi->timeout;
 		client_rmi->user_data = rmi;
 		client_rmi->thread_start = 1;
+		
+		client_rmi->struct_num = rmi->struct_num;
+		client_rmi->struct_pair = rmi->struct_pair;
+		client_rmi->func_num = rmi->func_num;
+		client_rmi->func_table = rmi->func_table;
+		client_rmi->return_para = rmi->return_para;
+	
 /*		pthread_create(&client_rmi->pid, NULL, rmi_server_thread, (void *)client_rmi);*/
 		thread_run(rmi_server_thread, (void *)client_rmi);
 		pool_write_data(rmi->user_data, (unsigned char *)&client_rmi, sizeof(struct rmi *));
@@ -696,7 +700,7 @@ void * rmi_server_thread(void * arg) {
 		}
 
 		do {			
-			if ((func_entry = get_func_entry(hdr.funcid)) == NULL) {
+			if ((func_entry = get_func_entry(rmi, hdr.funcid)) == NULL) {
 				trace("req interface is not support now!\n");
 				len = 0;
 				error_code = 2;
