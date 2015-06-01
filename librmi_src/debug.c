@@ -227,6 +227,10 @@ char * fast_for_each(char * buf, int len, int step, void * id, for_each_cb cb) {
 		} else {
 			left = next;
 		}
+		if (right-left == 1) {
+/*			printf("left: %d\n", left);*/
+			break;
+		}
 	}
 
 	return NULL;
