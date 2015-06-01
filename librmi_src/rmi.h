@@ -5,6 +5,22 @@
 #include <string.h>
 #include "thread.h"
 
+#if 0
+#ifdef _MSC_VER /* Windows平台版本 */
+	#ifdef RMI_LIB /* 编译生成静态库(LIB) */
+		#define RMI_API 
+	#else /* 编译生成动态库(DLL) */
+		#ifdef RMI_EXPORTS
+			#define RMI_API __declspec(dllexport)
+		#else
+			#define RMI_API __declspec(dllimport)
+		#endif
+	#endif
+#else /* Linux平台版本 */
+	#define RMI_API 
+#endif
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

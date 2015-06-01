@@ -87,6 +87,7 @@ void * list_at(LIST_S * plist, const int index);
 int list_erase(LIST_S * plist, const int index);
 int list_erase_it(LIST_S * plist, void * pbuf, LIST_CALLBACK cb);
 int list_operate_it(LIST_S * plist, LIST_CALLBACK cb);
+void * list_find_it(LIST_S * plist, void * pbuf, LIST_CALLBACK cb);
 
 // loopbuf
 int loopbuf_init(LOOPBUF_S * pstLoopbuf, unsigned char * pbuf, int len);
@@ -105,6 +106,8 @@ int pool_read_data(POOL_S * pool, unsigned char * pbuf, int max_len);
 int pool_size(POOL_S * pool);
 int pool_operate_it(POOL_S * pool, LIST_CALLBACK cb);
 int pool_erase_it(POOL_S * pool, void * pbuf, LIST_CALLBACK cb);
+
+#define to_list_node(ptr) (NODE_S *)((char*)ptr-sizeof(NODE_S))
 
 #ifdef __cplusplus
 }
