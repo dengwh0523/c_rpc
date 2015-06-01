@@ -1,0 +1,66 @@
+LIBRARY	"rmi"
+EXPORTS
+	rmi_init
+	rmi_finit
+	rmi_set_timeout
+	rmi_set_mem_pool_size
+	rmi_set_max_connect_num
+	rmi_server_start
+	rmi_server_close
+	rmi_client_start
+	rmi_client_close
+	get_func_entry
+	func_serialize
+	func_deserialize
+	find_response
+	gen_header
+	invoke
+	
+	init_thread_cnt
+	add_thread_cnt
+	del_thread_cnt
+	get_thread_cnt
+	start_time
+	end_time
+	get_used_time
+	get_tick_time
+	str_to_int
+	for_each
+	fast_for_each
+	
+	list_init
+	list_finit
+	list_lock
+	list_unlock
+	get_user_list
+	list_add_user
+	list_delete_user
+	list_write_data
+	list_read_data
+	list_user_read
+	list_size
+	list_at
+	list_erase
+	list_erase_it
+	list_operate_it
+	loopbuf_init
+	loopbuf_finit
+	loopbuf_put_data
+	loopbuf_get_data
+	loopbuf_data_cnt
+	loopbuf_lock
+	loopbuf_unlock
+	pool_init
+	pool_finit
+	pool_write_data
+	pool_read_data
+	pool_size
+	pool_operate_it
+	pool_erase_it
+	
+	get_fd_error_str
+	ip_to_net
+	net_to_ip
+	close_fd
+	
+	
