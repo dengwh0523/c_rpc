@@ -662,7 +662,7 @@ int output_func_definition(FILE * fp, LIST_S * func_list) {
 		output(fp, "\t	return -1;\n");
 		output(fp, "\t}\n");
 		output(fp, "\tbuf = *ret_buf + sizeof(struct rmi_header);\n");
-		output(fp, "\tparse_len += func_serialize(rmi, (unsigned char *)&r_ret, buf+parse_len, &return_para[0]);\n");
+		output(fp, "\tparse_len += func_serialize(rmi, (unsigned char *)&r_ret, buf+parse_len, &rmi->return_para[0]);\n");
 
 		for (j = 0; j < para_num; j++) {
 			struct parameter * para;
@@ -780,7 +780,7 @@ int output_proxier_func(FILE * fp, LIST_S * func_list) {
 		output(fp, "\t}\n");
 		
 		output(fp, "\n\t// 反序列化出参数\n");
-		output(fp, "\tparse_len += func_deserialize(rmi, (unsigned char *)&r_ret, pdata+parse_len, &return_para[0]);\n");
+		output(fp, "\tparse_len += func_deserialize(rmi, (unsigned char *)&r_ret, pdata+parse_len, &rmi->return_para[0]);\n");
 		for (j = 0; j < para_num; j++) {
 			struct parameter * para;
 			char buf[32] = {0};
