@@ -194,7 +194,7 @@ int set_varint_signed(const unsigned char * pdata, const int len, unsigned char 
 			trace("para error\n");
 			return -1;
 	}
-	value = (value << 1) ^ (value >> (sizeof(long long)-1));
+	value = (value << 1) ^ (value >> (sizeof(long long)*8-1));
 	return set_varint((unsigned char *)&value, len, pbuf);
 }
 

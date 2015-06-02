@@ -4,12 +4,12 @@
 #include "rmi.h"
 
 #define MAX_NUM 2
-#define CONNECT_NUM	256
+#define CONNECT_NUM	1
 
 #define WAIT_TIME	(10*1000)
 
-struct aaa gs_para1[MAX_NUM];
-struct bbb gs_para2[MAX_NUM];
+/*struct aaa gs_para1[MAX_NUM];*/
+/*struct bbb gs_para2[MAX_NUM];*/
 
 struct rmi gs_rmi[CONNECT_NUM];
 
@@ -36,7 +36,7 @@ void * test_proc() {
 	//connect_cnt++;
 /*	return NULL;*/
 	for (n = 0; n < test_times; n++) {
-#if 1
+#if 0
 		gs_para1[0].a = -1;
 		gs_para1[0].b = -2;
 		gs_para1[0].c = 1.2;
@@ -89,7 +89,6 @@ void * test_proc() {
 			}
 			usleep(WAIT_TIME);
 		}
-	#endif
 		for (i = 0; i < MAX_NUM; i++) {
 			struct aaa aaa_buf;
 			struct bbb bbb_buf;
@@ -109,6 +108,14 @@ void * test_proc() {
 			}
 			usleep(WAIT_TIME);
 		}
+	#endif
+		SWITCH_PORT_INFO_S stPortInfo;
+		switch_get_port_status(rmi,0,&stPortInfo);
+		printf("enable: %d\n", stPortInfo.enable);
+		printf("link: %08x\n", stPortInfo.link);
+		printf("speed: %08x\n", stPortInfo.speed);
+		printf("duplex: %08x\n", stPortInfo.duplex);
+		printf("fc: %08x\n", stPortInfo.fc);
 	}
 
 	if (0 != rmi_client_close(rmi)) {

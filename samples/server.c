@@ -8,11 +8,12 @@
 
 #define MAX_NUM 2
 
-struct aaa gs_para1[MAX_NUM];
-struct bbb gs_para2[MAX_NUM];
+/*struct aaa gs_para1[MAX_NUM];*/
+/*struct bbb gs_para2[MAX_NUM];*/
 
 pthread_mutex_t g_lock[MAX_NUM];
 
+#if 0
 int set_para(struct rmi * rmi, _IN int index, _IN struct aaa * para1) {
 	if (index >= MAX_NUM) {
 		trace("para error\n");
@@ -64,6 +65,22 @@ int get_version(struct rmi * rmi) {
 }
 
 int test1(struct rmi * rmi, int para0, char * ddd) {
+	return 0;
+}
+
+enable: 1
+link: 00000001
+speed: 00010001
+duplex: 00010003
+fc: 00000003
+#endif
+int switch_get_port_status(struct rmi * rmi, unsigned int port, SWITCH_PORT_INFO_S * pstPortInfo) {
+	pstPortInfo->enable = 0x1;
+	pstPortInfo->link = 0x1;
+	pstPortInfo->speed = 0x10001;
+	pstPortInfo->duplex = 0x10003;
+	pstPortInfo->fc = 0x3;
+
 	return 0;
 }
 

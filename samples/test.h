@@ -1,30 +1,27 @@
-#ifndef __RPC_H__
-#define __RPC_H__
+#ifndef __SWITCH_CTRL_H__
+#define __SWITCH_CTRL_H__
 
 #include "rmi.h"
 
-#define TEST_MACRO	100
+#define TEST_MACRO	10
 
-struct aaa {
-	unsigned int a MARK(0, 0);
-	unsigned char b MARK(1, 0);
-	float c MARK(2, 0);
-	double d MARK(3, 0);
-	long double e MARK(4, 0);
-	char f[TEST_MACRO] MARK(5, 1);
-};
-struct bbb {
-	struct aaa stAaa MARK(0, 0);
-	unsigned int a[10] MARK(1, 0);
-	struct aaa a_array[20] MARK(2, 0);
-};
-int set_para(struct rmi * rmi, _IN int index, _IN struct aaa * para1); 
-int set_para2(struct rmi * rmi, _IN int index, _IN struct aaa * para1, _IN struct bbb * para2); 
-int get_para(struct rmi * rmi, _IN int index, _OUT struct aaa *para1);
-int get_para2(struct rmi * rmi, _OUT struct aaa *para1, _OUT struct bbb *para2, _IN int index);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-int get_version(struct rmi * rmi);
-int test1(struct rmi * rmi, _IN int, _OUT char * ddd);
+typedef struct {
+	int enable MARK(0, 0);
+	int link MARK(1, 0);
+	int speed MARK(2, 0);
+	int duplex MARK(3, 0);
+	int fc MARK(4, 0);
+} SWITCH_PORT_INFO_S;
+
+int switch_get_port_status(struct rmi * rmi, _IN unsigned int port, _OUT SWITCH_PORT_INFO_S * pstPortInfo);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 
