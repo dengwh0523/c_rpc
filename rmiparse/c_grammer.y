@@ -8,6 +8,16 @@
 #include <string.h>
 #include "rmiparse.h"
 
+#define trace(fmt, ...) \
+do{\
+	char __buf1[64], __buf2[1024];\
+    snprintf(__buf1, sizeof(__buf1), "line[%d]: ", yylineno);\
+    snprintf(__buf2, sizeof(__buf2), fmt);\
+    printf("%s%s", __buf1, __buf2);\
+} while(0)
+
+extern int yylineno;
+
 static char g_type[128]; // 用来存储当前正解析到的函数返回类型或参数类型
 static char g_name[128]; // 用来存储当前正解析到的函数名字或参数名字
 static int array_len;	// 数组长度
@@ -391,14 +401,8 @@ struct_declarator_list
 struct_declarator
 	: declarator
 	{
-		//memset(&s_para, 0, sizeof(s_para));
-		strcpy(s_para.name, g_name);
-		strcpy(s_para.type, g_type);
-		s_para.len = array_len;
-		
-		memset(g_name, 0, sizeof(g_name));
-		memset(g_type, 0, sizeof(g_type));
-		array_len = 1;
+		trace("no mark\n");
+		return -1;
 	}
 	| declarator MARK '(' CONSTANT ',' CONSTANT ')'
 	{
@@ -514,6 +518,7 @@ parameter_declaration
 			s_para.dir = PARA_OUT;
 		}
 		if (PARA_OUT == s_para.dir && 1 != s_para.pointer) {
+			trace("out para is not pointer!\n");
 			return -1;
 		}
 		s_para.field_type = gen_field_type(&s_para);
@@ -541,6 +546,7 @@ parameter_declaration
 			s_para.dir = PARA_OUT;
 		}
 		if (PARA_OUT == s_para.dir && 1 != s_para.pointer) {
+			trace("out para is not pointer!\n");
 			return -1;
 		}
 		

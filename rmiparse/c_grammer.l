@@ -1,3 +1,4 @@
+%option yylineno
 
 D			[0-9]
 L			[a-zA-Z_]
