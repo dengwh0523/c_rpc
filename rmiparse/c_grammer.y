@@ -8,15 +8,13 @@
 #include <string.h>
 #include "rmiparse.h"
 
-#define trace(fmt, ...) \
+#define trace(fmt...) \
 do{\
 	char __buf1[64], __buf2[1024];\
     snprintf(__buf1, sizeof(__buf1), "line[%d]: ", yylineno);\
     snprintf(__buf2, sizeof(__buf2), fmt);\
     printf("%s%s", __buf1, __buf2);\
 } while(0)
-
-extern int yylineno;
 
 static char g_type[128]; // 用来存储当前正解析到的函数返回类型或参数类型
 static char g_name[128]; // 用来存储当前正解析到的函数名字或参数名字
@@ -34,6 +32,7 @@ void init(void);
 void write_func_info(char *);
 void write_struct_info(void);
 void write_newtype_info(void);
+int write_func_para(char * name, char * dir);
 %}
 
 %token <val> CONSTANT
@@ -505,57 +504,42 @@ parameter_list
 	;
 
 parameter_declaration
-	: DIR declaration_specifiers declarator	
+	: declaration_specifiers declarator	
 	{
-		//printf("is_func: %d, pointer: %d\n", is_func, s_para.pointer);
-		//memset(&s_para, 0, sizeof(s_para));
-		strcpy(s_para.name, g_name);
-		strcpy(s_para.type, g_type);
-		s_para.len = array_len;
-		if (0 == memcmp($1, "_IN", strlen("_IN"))) {
-			s_para.dir = PARA_IN;
-		} else if (0 == memcmp($1, "_OUT", strlen("_OUT"))) {
-			s_para.dir = PARA_OUT;
-		}
-		if (PARA_OUT == s_para.dir && 1 != s_para.pointer) {
-			trace("out para is not pointer!\n");
-			return -1;
-		}
-		s_para.field_type = gen_field_type(&s_para);
-		s_para.para_num = list_size(&s_func.para_list);
-		
-		list_write_data(&s_func.para_list, (unsigned char *)&s_para, sizeof(s_para), 0);
-		memset(&s_para, 0, sizeof(s_para));
-		
-		memset(g_name, 0, sizeof(g_name));
-		memset(g_type, 0, sizeof(g_type));
-		array_len = 1;
+		trace("para[%s] has no dir\n", g_name);
+		return -1;
+	}
+	| declaration_specifiers
+	{
+		trace("para has no dir\n");
+		return -1;
 	}
 	| declaration_specifiers abstract_declarator
-	| DIR declaration_specifiers
 	{
-		//memset(&s_para, 0, sizeof(s_para));
-		//strcpy(s_para.name, g_name);
-		strcpy(s_para.type, g_type);
-		s_para.len = array_len;
-		sprintf(s_para.name, "para%d", list_size(&s_func.para_list));
-		s_para.para_num = list_size(&s_func.para_list);
-		if (0 == memcmp($1, "_IN", strlen("_IN"))) {
-			s_para.dir = PARA_IN;
-		} else if (0 == memcmp($1, "_OUT", strlen("_OUT"))) {
-			s_para.dir = PARA_OUT;
-		}
-		if (PARA_OUT == s_para.dir && 1 != s_para.pointer) {
-			trace("out para is not pointer!\n");
+		trace("para has no dir\n");
+		return -1;
+	}
+	| DIR declaration_specifiers declarator	
+	{
+		if (0 != write_func_para(g_name, $1)) {
 			return -1;
 		}
-		
-		list_write_data(&s_func.para_list, (unsigned char *)&s_para, sizeof(s_para), 0);
-		memset(&s_para, 0, sizeof(s_para));
-		
-		memset(g_name, 0, sizeof(g_name));
-		memset(g_type, 0, sizeof(g_type));
-		array_len = 1;
+	}
+	| DIR declaration_specifiers abstract_declarator
+	{
+		char name[16] = {0};
+		sprintf(name, "para%d", list_size(&s_func.para_list));
+		if (0 != write_func_para(name, $1)) {
+			return -1;
+		}
+	}
+	| DIR declaration_specifiers
+	{		
+		char name[16] = {0};
+		sprintf(name, "para%d", list_size(&s_func.para_list));
+		if (0 != write_func_para(name, $1)) {
+			return -1;
+		}
 	}
 	;
 
@@ -571,6 +555,9 @@ type_name
 
 abstract_declarator
 	: pointer
+	{
+		s_para.pointer = 1;
+	}
 	| direct_abstract_declarator
 	| pointer direct_abstract_declarator
 	;
@@ -740,5 +727,33 @@ void write_newtype_info() {
 	}
 	memset(&s_newtype, 0, sizeof(s_newtype));
 	is_typedef = 0;
+}
+
+int write_func_para(char * name, char * dir) {
+	//printf("is_func: %d, pointer: %d\n", is_func, s_para.pointer);
+	//memset(&s_para, 0, sizeof(s_para));
+	strcpy(s_para.name, name);
+	strcpy(s_para.type, g_type);
+	s_para.len = array_len;
+	if (0 == memcmp(dir, "_IN", strlen("_IN"))) {
+		s_para.dir = PARA_IN;
+	} else if (0 == memcmp(dir, "_OUT", strlen("_OUT"))) {
+		s_para.dir = PARA_OUT;
+	}
+	if (PARA_OUT == s_para.dir && 1 != s_para.pointer) {
+		trace("out para is not pointer!\n");
+		return -1;
+	}
+	s_para.field_type = gen_field_type(&s_para);
+	s_para.para_num = list_size(&s_func.para_list);
+	
+	list_write_data(&s_func.para_list, (unsigned char *)&s_para, sizeof(s_para), 0);
+	memset(&s_para, 0, sizeof(s_para));
+	
+	memset(g_name, 0, sizeof(g_name));
+	memset(g_type, 0, sizeof(g_type));
+	array_len = 1;
+
+	return 0;
 }
 
