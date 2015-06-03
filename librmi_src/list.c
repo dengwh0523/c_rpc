@@ -212,7 +212,7 @@ NODE_S * list_remove_head(LIST_S * plist) {
 }
 
 NODE_S * list_remove_tail(LIST_S * plist) {
-	NODE_S * pnode, * pre;
+	NODE_S * pnode;
 	if (NULL == plist) {
 		trace("para error\n");
 		return NULL;
@@ -228,6 +228,7 @@ NODE_S * list_remove_tail(LIST_S * plist) {
 		plist->tail = NULL;
 	} else {
 	#if 0
+		NODE_S * pre;
 		for (pre = pnode = plist->head; NULL != pnode->next; pre = pnode, pnode = pnode->next);
 		pre->next = NULL;
 		plist->tail = pre;

@@ -12,15 +12,15 @@
 #define STR_ARRAY_LEN(str)	(sizeof(str)/sizeof(str[0]))
 
 #ifdef DEBUG
-#define trace(fmt...) \
+#define trace(fmt, ...) \
 do{\
 	char __buf1[64], __buf2[1024];\
     snprintf(__buf1, sizeof(__buf1), "[%s:%d-%s] ", __FILE__, __LINE__, __FUNCTION__);\
-    snprintf(__buf2, sizeof(__buf2), fmt);\
+    snprintf(__buf2, sizeof(__buf2), fmt, ##__VA_ARGS__);\
     printf("%s%s", __buf1, __buf2);\
 } while(0)
 #else
-#define trace(fmt...) do {} while(0)
+#define trace(fmt, ...) do {} while(0)
 #endif
 
 typedef struct {

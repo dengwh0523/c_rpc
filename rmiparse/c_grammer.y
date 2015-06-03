@@ -8,11 +8,11 @@
 #include <string.h>
 #include "rmiparse.h"
 
-#define trace(fmt...) \
+#define trace(fmt, ...) \
 do{\
 	char __buf1[64], __buf2[1024];\
     snprintf(__buf1, sizeof(__buf1), "line[%d]: ", yylineno);\
-    snprintf(__buf2, sizeof(__buf2), fmt);\
+    snprintf(__buf2, sizeof(__buf2), fmt, ##__VA_ARGS__);\
     printf("%s%s", __buf1, __buf2);\
 } while(0)
 

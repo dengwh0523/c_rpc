@@ -481,7 +481,7 @@ int invoke(struct rmi * rmi, int id, unsigned char * pbuf, int len, unsigned cha
 	
 		fd = create_tcp_client_socket(rmi->server_ip, rmi->server_port);
 		if (fd < 0) {
-			trace("create_tcp_client_socket failed; host[%s], port[%d]\n", host, port);
+			trace("create_tcp_client_socket failed; host[%s], port[%d]\n", rmi->server_ip, rmi->server_port);
 			return -1;
 		}
 
