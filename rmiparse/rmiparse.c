@@ -945,7 +945,7 @@ int main(int argc, char * argv[]) {
 
 	ret = yyparse();
 	if (0 != ret) {
-		trace("sytax error\n");
+		trace("line[%d]: sytax error\n", yylineno);
 		return -1;
 	}
 

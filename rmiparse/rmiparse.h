@@ -46,6 +46,8 @@ struct func_info {
 	LIST_S para_list;
 };
 
+extern int yylineno;
+
 extern LIST_S g_struct_list;
 extern LIST_S g_func_list;
 extern LIST_S g_newtype_list;
