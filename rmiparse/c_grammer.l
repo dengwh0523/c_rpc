@@ -49,8 +49,6 @@ int set_input_file(char * infile);
 
 "MARK"				{get_token_name(); return(MARK);}
 
-"struct rmi * rmi"(,)?	{}
-
 "auto"				{ get_token_name(); return(AUTO); }
 "break"				{ get_token_name(); return(BREAK); }
 "case"				{ get_token_name(); return(CASE); }

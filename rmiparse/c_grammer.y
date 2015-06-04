@@ -28,11 +28,14 @@ int is_func = 0;
 int is_typedef = 0;
 int is_struct_def = 0;
 
+int is_first_para = 1;
+
 void init(void);
 void write_func_info(char *);
 void write_struct_info(void);
 void write_newtype_info(void);
 int write_func_para(char * name, char * dir);
+int check_func_first_para();
 %}
 
 %token <val> CONSTANT
@@ -475,8 +478,10 @@ direct_declarator
 	| direct_declarator '(' identifier_list ')'
 	| direct_declarator '(' ')'
 	{
-		strcat(s_func.func_name, $1);
-		is_func = 1;
+/*		strcat(s_func.func_name, $1);*/
+/*		is_func = 1;*/
+		trace("func must have a para with type [struct rmi *]\n");
+		return -1;
 	}
 	;
 
@@ -506,18 +511,21 @@ parameter_list
 parameter_declaration
 	: declaration_specifiers declarator	
 	{
-		trace("para[%s] has no dir\n", g_name);
-		return -1;
+		if (0 != check_func_first_para()) {
+			return -1;
+		}
 	}
 	| declaration_specifiers
 	{
-		trace("para has no dir\n");
-		return -1;
+		if (0 != check_func_first_para()) {
+			return -1;
+		}
 	}
 	| declaration_specifiers abstract_declarator
 	{
-		trace("para has no dir\n");
-		return -1;
+		if (0 != check_func_first_para()) {
+			return -1;
+		}
 	}
 	| DIR declaration_specifiers declarator	
 	{
@@ -702,6 +710,7 @@ void write_func_info(char * ret_type) {
 		list_init(&s_func.para_list, BUF_SIZE, LIST_MAX_TIME, LIST_MAX_PACKET, LIST_MAX_USER);
 	}
 	is_func = 0;
+	is_first_para = 1;
 }
 
 void write_struct_info() {
@@ -729,7 +738,11 @@ void write_newtype_info() {
 	is_typedef = 0;
 }
 
-int write_func_para(char * name, char * dir) {
+int write_func_para(char * name, char * dir) {	
+	if (is_first_para) {
+		trace("func first para do not need dir\n");
+		return -1;
+	}
 	//printf("is_func: %d, pointer: %d\n", is_func, s_para.pointer);
 	//memset(&s_para, 0, sizeof(s_para));
 	strcpy(s_para.name, name);
@@ -754,6 +767,28 @@ int write_func_para(char * name, char * dir) {
 	memset(g_type, 0, sizeof(g_type));
 	array_len = 1;
 
+	return 0;
+}
+
+int check_func_first_para() {
+/*	trace("g_type: %s\n", g_type);*/
+	if (is_first_para) {
+		is_first_para = 0;
+		if (0 != strcmp(g_type, "struct rmi") || !s_para.pointer) {
+			trace("first para type of func must be [struct rmi *]\n");
+			return -1;
+		} else {
+			memset(&s_para, 0, sizeof(s_para));
+		}
+	} else {
+		if (0 != g_name[0]) {
+			trace("para[%s] has no dir\n", g_name);
+		} else {
+			trace("para has no dir\n");
+		}
+		return -1;
+	}
+	
 	return 0;
 }
 
