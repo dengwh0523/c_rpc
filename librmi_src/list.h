@@ -71,6 +71,7 @@ int list_finit(LIST_S * plist);
 /*void list_free_node(LIST_S * plist, NODE_S * pnode, int flag);*/
 /*void list_free_head(LIST_S * plist, unsigned int max_time);*/
 /*NODE_S * list_find_user(LIST_S * plist, char * user_name);*/
+int list_delete_node(LIST_S * plist, NODE_S * pnode);
 
 void list_lock(LIST_S * plist);
 void list_unlock(LIST_S * plist);

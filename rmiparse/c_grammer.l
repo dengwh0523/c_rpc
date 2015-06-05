@@ -15,6 +15,7 @@ IS			(u|U|l|L)*
 void get_token_name();
 void get_token_value();
 int set_input_file(char * infile);
+int check_type();
 %}
 
 

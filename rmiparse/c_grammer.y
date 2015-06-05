@@ -673,7 +673,7 @@ function_definition
 
 extern char yytext[];
 
-yyerror(s)
+void yyerror(s)
 char *s;
 {
 	fflush(stdout);

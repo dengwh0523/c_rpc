@@ -1,7 +1,7 @@
 #ifndef __LIST_H__
 #define __LIST_H__
 
-#include <pthread.h>
+#include "thread.h"
 
 #define LIST_WAIT_FLAG		0
 #define LIST_OVERWRITE_FLAG	1
@@ -28,7 +28,7 @@ typedef struct NODE_S {
 typedef struct LIST_S {
 	NODE_S * head;
 	NODE_S * tail;
-	pthread_mutex_t lock;
+	lock * lock;
 	int num;
 	int init_status;
 	unsigned char * pbuf;
@@ -46,7 +46,7 @@ typedef struct LOOPBUF_S {
 	int tail;
 	int num;
 	int left_num;
-	pthread_mutex_t lock;
+	lock * lock;
 	int status;
 } LOOPBUF_S;
 
@@ -71,6 +71,7 @@ int list_finit(LIST_S * plist);
 /*void list_free_node(LIST_S * plist, NODE_S * pnode, int flag);*/
 /*void list_free_head(LIST_S * plist, unsigned int max_time);*/
 /*NODE_S * list_find_user(LIST_S * plist, char * user_name);*/
+int list_delete_node(LIST_S * plist, NODE_S * pnode);
 
 void list_lock(LIST_S * plist);
 void list_unlock(LIST_S * plist);

@@ -5,9 +5,9 @@ ifeq (,$(filter release,$(config)))
 endif
 CFLAG += -W
 
-OBJS := list.o rmiparse.o debug.o crc32.o
+OBJS := list.o rmiparse.o debug.o crc32.o thread.o c_grammer.yy.o c_grammer.tab.o
 
-LIBS := -lrt
+LIBS := -lrt -lpthread
 OUT_DIR := ../bin
 
 CC = $(CROSS_COMPILE)gcc
@@ -19,15 +19,17 @@ all: rmiparse
 %.o: %.c
 	$(CC) -c -o $@ $< $(CFLAG)
 
-rmiparse: lex_middleman bison_middleman $(OBJS)
-	$(CC) -o $(OUT_DIR)/$@ c_grammer.yy.c c_grammer.tab.c $(OBJS) $(LIBS)
+rmiparse: bison_middleman lex_middleman $(OBJS)
+	$(CC) -o $(OUT_DIR)/$@ $(OBJS) $(LIBS)
 	
 lex_middleman: c_grammer.l
 	flex -o c_grammer.yy.c c_grammer.l
+	$(CC) -c -o c_grammer.yy.o c_grammer.yy.c $(CFLAG)
 	@touch lex_middleman
 	
 bison_middleman: c_grammer.y
 	bison -d -o c_grammer.tab.c c_grammer.y
+	$(CC) -c -o c_grammer.tab.o c_grammer.tab.c $(CFLAG)
 	@touch bison_middleman
 	
 clean:

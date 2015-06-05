@@ -157,7 +157,7 @@ int rpc_display() {
 int rpc_finit() {
 	int struct_num;
 	int func_num;
-	int i, j;
+	int i;
 	
 	struct_num = list_size(&g_struct_list);
 
@@ -290,12 +290,16 @@ int output_cplus_start(FILE * fp) {
 	output(fp, "#ifdef __cplusplus\n"
 			   "extern \"C\" {\n"
 			   "#endif\n\n");
+
+	return 0;
 }
 
 int output_cplus_end(FILE * fp) {
 	output(fp, "#ifdef __cplusplus\n"
 			   "}\n"
 			   "#endif\n\n");
+
+	return 0;
 }
 
 int output_struct_member(FILE * fp, LIST_S * struct_list) {
@@ -391,7 +395,7 @@ int output_struct_member(FILE * fp, LIST_S * struct_list) {
 
 int output_struct_pair(FILE * fp, LIST_S * struct_list) {
 	int struct_num;
-	int i, j;
+	int i;
 	int newtype_num;
 
 	output(fp, "// struct pair\n");
@@ -495,7 +499,7 @@ int output_return_para(FILE * fp) {
 
 int output_func_interface(FILE * fp, LIST_S * func_list) {
 	int func_num;
-	int i, j;
+	int i;
 
 	output(fp, "// invoke function interfaces\n");
 
@@ -519,7 +523,7 @@ int output_func_interface(FILE * fp, LIST_S * func_list) {
 
 int output_func_map(FILE * fp, LIST_S * func_list, int flag) {
 	int func_num;
-	int i, j;
+	int i;
 
 	output(fp, "// function map\n");
 	output(fp, "static struct func_entry func_table[] = {\n");
@@ -568,6 +572,8 @@ int output_rmi_table(FILE * fp, char * type) {
 			   "\trmi->func_table = func_table;\n"
 			   "\trmi->return_para = return_para;\n");
 	output(fp, "}\n\n");
+
+	return 0;
 }
 
 int output_func_definition(FILE * fp, LIST_S * func_list) {
@@ -892,10 +898,8 @@ int get_min_id(void * src, void * dst) {
 
 void func_sort(LIST_S * func_list) {
 	int func_num;
-	int i, j;
 
 	LIST_S stList;
-	struct func_info * func_info;
 
 	memset(&stList, 0, sizeof(stList));
 	list_init(&stList, 0, 0, 0, 0);
@@ -920,9 +924,6 @@ void func_sort(LIST_S * func_list) {
 }
 
 int main(int argc, char * argv[]) {
-	int struct_num;
-	int func_num;
-	int i, j;
 	int ret;
 
 	if (argc != 3) {

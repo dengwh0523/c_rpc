@@ -5,7 +5,6 @@
 #include "debug.h"
 #include "list.h"
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif

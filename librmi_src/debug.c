@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
+
 #include "debug.h"
 
 #ifdef __cplusplus
@@ -228,7 +230,6 @@ char * fast_for_each(char * buf, int len, int step, void * id, for_each_cb cb) {
 			left = next;
 		}
 		if (right-left == 1) {
-/*			printf("left: %d\n", left);*/
 			break;
 		}
 	}

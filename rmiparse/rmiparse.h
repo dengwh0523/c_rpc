@@ -1,6 +1,12 @@
 #ifndef __RMIPARSE_H__
 #define __RMIPARSE_H__
 
+#ifdef _WIN32
+#define snprintf _snprintf
+#define strdup _strdup
+#define fileno _fileno
+#endif
+
 #include "list.h"
 #include "crc32.h"
 
@@ -47,6 +53,8 @@ struct func_info {
 };
 
 extern int yylineno;
+extern int yylex (void);
+extern void yyerror(char *);
 
 extern LIST_S g_struct_list;
 extern LIST_S g_func_list;

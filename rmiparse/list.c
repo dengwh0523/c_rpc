@@ -5,7 +5,6 @@
 #include "debug.h"
 #include "list.h"
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -102,7 +101,7 @@ int list_init(LIST_S * plist, int len, int max_time, int max_packet, int max_use
 		plist->pbuf = NULL;
 	}
 	plist->total_len = len;
-	pthread_mutex_init(&plist->lock, NULL);
+	plist->lock = lock_create();
 	if (max_user > 0) {
 		plist->user_list = malloc(sizeof(LIST_S));
 		if (NULL == plist->user_list) {
@@ -134,7 +133,7 @@ int list_finit(LIST_S * plist) {
 			free(plist->user_list);
 			memset(plist, 0, sizeof(LIST_S));
 		}
-		pthread_mutex_destroy(&plist->lock);
+		lock_destroy(plist->lock);
 	}
 	memset(plist, 0, sizeof(LIST_S));
 
@@ -142,11 +141,11 @@ int list_finit(LIST_S * plist) {
 }
 
 void list_lock(LIST_S * plist) {
-	pthread_mutex_lock(&plist->lock);
+	lock_lock(plist->lock);
 }
 
 void list_unlock(LIST_S * plist) {
-	pthread_mutex_unlock(&plist->lock);
+	lock_unlock(plist->lock);
 }
 
 int list_add_tail(LIST_S * plist, NODE_S * pnode) {
@@ -212,7 +211,7 @@ NODE_S * list_remove_head(LIST_S * plist) {
 }
 
 NODE_S * list_remove_tail(LIST_S * plist) {
-	NODE_S * pnode, * pre;
+	NODE_S * pnode;
 	if (NULL == plist) {
 		trace("para error\n");
 		return NULL;
@@ -228,6 +227,7 @@ NODE_S * list_remove_tail(LIST_S * plist) {
 		plist->tail = NULL;
 	} else {
 	#if 0
+		NODE_S * pre;
 		for (pre = pnode = plist->head; NULL != pnode->next; pre = pnode, pnode = pnode->next);
 		pre->next = NULL;
 		plist->tail = pre;
@@ -699,7 +699,7 @@ int loopbuf_init(LOOPBUF_S * pstLoopbuf, unsigned char * pbuf, int len) {
 	pstLoopbuf->pbuf = pbuf;
 	pstLoopbuf->total_len = len;
 	pstLoopbuf->left_num = pstLoopbuf->total_len - pstLoopbuf->num;
-	pthread_mutex_init(&pstLoopbuf->lock, NULL);
+	pstLoopbuf->lock = lock_create();
 	pstLoopbuf->status = 1;
 
 	return 0;
@@ -707,7 +707,7 @@ int loopbuf_init(LOOPBUF_S * pstLoopbuf, unsigned char * pbuf, int len) {
 
 int loopbuf_finit(LOOPBUF_S * pstLoopbuf) {
 	if (pstLoopbuf->status) {
-		pthread_mutex_destroy(&pstLoopbuf->lock);
+		lock_destroy(pstLoopbuf->lock);
 		pstLoopbuf->status = 0;
 	}
 
@@ -792,11 +792,11 @@ int loopbuf_data_cnt(LOOPBUF_S * pstLoopbuf) {
 }
 
 void loopbuf_lock(LOOPBUF_S * pstLoopbuf) {
-	pthread_mutex_lock(&pstLoopbuf->lock);
+	lock_lock(pstLoopbuf->lock);
 }
 
 void loopbuf_unlock(LOOPBUF_S * pstLoopbuf) {
-	pthread_mutex_unlock(&pstLoopbuf->lock);
+	lock_unlock(pstLoopbuf->lock);
 }
 
 int pool_init(POOL_S * pool, int num, int blk_size) {
