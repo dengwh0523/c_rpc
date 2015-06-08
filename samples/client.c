@@ -4,7 +4,7 @@
 #include "rmi.h"
 
 #define MAX_NUM 2
-#define CONNECT_NUM	1
+#define CONNECT_NUM	10
 
 #define WAIT_TIME	(10*1000)
 
@@ -26,7 +26,10 @@ void * test_proc() {
 	int n;
 	
 	rmi = &client_rmi;
-	RMI_INIT_CLIENT(rmi, test);
+	RMI_INIT_CLIENT(rmi, test);	
+	rmi_set_socket_type(rmi, RMI_SOCKET_UDP);
+	rmi_set_recv_buf_size(rmi, 2*1024*1024);
+	rmi_set_send_buf_size(rmi, 2*1024*1024);
 	rmi_set_timeout(rmi, 500);
 	if (0 != rmi_client_start(rmi, server_ip, server_port)) {
 		trace("rmi_client_start failed\n");
@@ -109,13 +112,15 @@ void * test_proc() {
 			usleep(WAIT_TIME);
 		}
 	#endif
-		SWITCH_PORT_INFO_S stPortInfo;
-		switch_get_port_status(rmi,0,&stPortInfo);
-		printf("enable: %d\n", stPortInfo.enable);
-		printf("link: %08x\n", stPortInfo.link);
-		printf("speed: %08x\n", stPortInfo.speed);
-		printf("duplex: %08x\n", stPortInfo.duplex);
-		printf("fc: %08x\n", stPortInfo.fc);
+/*		SWITCH_PORT_INFO_S stPortInfo;*/
+/*		switch_get_port_status(rmi,0,&stPortInfo);*/
+/*		printf("enable: %d\n", stPortInfo.enable);*/
+/*		printf("link: %08x\n", stPortInfo.link);*/
+/*		printf("speed: %08x\n", stPortInfo.speed);*/
+/*		printf("duplex: %08x\n", stPortInfo.duplex);*/
+/*		printf("fc: %08x\n", stPortInfo.fc);*/
+		TEST3_S stTest3;
+		switch_test_get2(rmi, &stTest3);
 	}
 
 	if (0 != rmi_client_close(rmi)) {

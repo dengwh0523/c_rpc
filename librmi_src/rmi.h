@@ -64,8 +64,9 @@ do{\
 #define RMI_TWO_WAY_REQ			2
 #define RMI_RESPONSE			3
 #define RMI_NOTIFY				4
+#define RMI_CLOSE				5
 #define RMI_MTYPE_MIN			RMI_ONE_WAY_REQ
-#define RMI_MTYPE_MAX			RMI_NOTIFY
+#define RMI_MTYPE_MAX			RMI_CLOSE
 
 #define RMI_FIELD_VAR			0
 #define RMI_FIELD_FIX			1
@@ -75,7 +76,11 @@ do{\
 #define RMI_MAX_CONNECT			256
 #define RMI_DEFAULT_TIMEOUT		500	//unit: 1ms
 #define RMI_DEFAULT_POOL_SIZE	4096
-#define RMI_DEFAULT_RECV_BUF_SIZE	4096
+#define RMI_DEFAULT_RECV_BUF_SIZE	(512*1024)
+#define RMI_DEFAULT_KEEPALIVE_TIME 5000	// 5s
+
+#define RMI_SOCKET_TCP	0
+#define RMI_SOCKET_UDP	1
 
 struct rmi_header {
 	unsigned int magic;		// "rmi"
@@ -119,8 +124,21 @@ struct rmi {
 	int connect_num;
 	void * mem_pool;
 	int mem_pool_size;
+
+	int socket_type;	// tcp or udp
+
+	// for client
 	char server_ip[16];
 	unsigned short server_port;
+
+	// for udp
+	char peer_ip[16];
+	unsigned short peer_port;
+	int recv_buf_size;
+	int send_buf_size;
+
+	int keepalive_time;
+	
 	void * user_data;
 
 	// support multi server/client
@@ -158,6 +176,9 @@ int rmi_finit(struct rmi * rmi);
 int rmi_set_timeout(struct rmi * rmi, int timeout/* unit: 1ms*/);
 int rmi_set_mem_pool_size(struct rmi * rmi, int pool_size);
 int rmi_set_max_connect_num(struct rmi * rmi, int num);
+int rmi_set_recv_buf_size(struct rmi * rmi, int buf_size);
+int rmi_set_send_buf_size(struct rmi * rmi, int buf_size);
+int rmi_set_socket_type(struct rmi * rmi, int socket_type);
 
 void rmi_lock(struct rmi * rmi);
 void rmi_unlock(struct rmi * rmi);

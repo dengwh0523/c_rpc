@@ -414,6 +414,14 @@ int set_fd_reuse(int fd) {
 	return setsockopt(fd, SOL_SOCKET, SO_REUSEADDR,(char*)&reuse, sizeof(int));
 }
 
+int set_fd_recvbuf(int fd, int recv_buf) {
+	return setsockopt(fd, SOL_SOCKET, SO_RCVBUF, (char *)&recv_buf, sizeof(recv_buf));
+}
+
+int set_fd_sendbuf(int fd, int send_buf) {
+	return setsockopt(fd, SOL_SOCKET, SO_SNDBUF, (char *)&send_buf, sizeof(send_buf));
+}
+
 int read_fd_timeout(int fd, unsigned char * pbuf, int len, int timeout/* unit: ms */) {
 	int rd_len;
 	

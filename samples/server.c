@@ -74,12 +74,40 @@ speed: 00010001
 duplex: 00010003
 fc: 00000003
 #endif
-int switch_get_port_status(struct rmi * rmi, unsigned int port, SWITCH_PORT_INFO_S * pstPortInfo) {
-	pstPortInfo->enable = 0x1;
-	pstPortInfo->link = 0x1;
-	pstPortInfo->speed = 0x10001;
-	pstPortInfo->duplex = 0x10003;
-	pstPortInfo->fc = 0x3;
+/*int switch_get_port_status(struct rmi * rmi, unsigned int port, SWITCH_PORT_INFO_S * pstPortInfo) {*/
+/*	pstPortInfo->enable = 0x1;*/
+/*	pstPortInfo->link = 0x1;*/
+/*	pstPortInfo->speed = 0x10001;*/
+/*	pstPortInfo->duplex = 0x10003;*/
+/*	pstPortInfo->fc = 0x3;*/
+/**/
+/*	return 0;*/
+/*}*/
+
+void set_test_data(TEST_S * pt) {
+	int i;
+	pt->aaa = 0xaa55;
+	for (i = 0; i < TEST_MACRO; i++) {
+		pt->bbb[i] = i;
+	}
+}
+
+int switch_test_get2(struct rmi * rmi, TEST3_S * ptest) {
+	TEST_S * pt;
+	int i;
+	pt = &ptest->stTest2.stTest2;	
+	set_test_data(pt);
+
+	for (i = 0; i < TEST_MACRO; i++) {
+		pt = &ptest->stTest2.stTest1[i];	
+		set_test_data(pt);
+	}
+
+/*	int i;*/
+/*	char *buf = (char *)ptest;*/
+/*	for (i = 0; i < sizeof(TEST3_S); i++) {*/
+/*		*(buf+i) = i;*/
+/*	}*/
 
 	return 0;
 }
@@ -108,6 +136,9 @@ int main(int argc, char * argv[]) {
     sigaction(SIGPIPE, &act, NULL);
 
 	RMI_INIT_SERVER(&server_rmi, test);
+	rmi_set_socket_type(&server_rmi, RMI_SOCKET_UDP);
+	rmi_set_recv_buf_size(&server_rmi, 2*1024*1024);
+	rmi_set_send_buf_size(&server_rmi, 2*1024*1024);
 	rmi_server_start(&server_rmi, port);
 
 	getchar();

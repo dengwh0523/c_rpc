@@ -63,4 +63,6 @@ EXPORTS
 	net_to_ip
 	close_fd
 	
+	thread_run
+	
 	

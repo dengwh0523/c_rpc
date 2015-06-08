@@ -8,6 +8,8 @@
 extern "C" {
 #endif
 
+#define UDP_BURST_LEN	(32*1024)
+
 void * rmi_listen_thread(void * arg);
 void * rmi_server_thread(void * arg);
 
@@ -52,13 +54,54 @@ int rmi_set_mem_pool_size(struct rmi * rmi, int pool_size) {
 	return 0;
 }
 
-/*int rmi_set_recv_buf_size(struct rmi * rmi, int buf_size) {*/
-/*	rmi->loopbuf_len = buf_size;*/
-/*	return 0;*/
-/*}*/
+int rmi_set_recv_buf_size(struct rmi * rmi, int buf_size) {
+	rmi->recv_buf_size = buf_size;
+	return 0;
+}
+
+int rmi_set_send_buf_size(struct rmi * rmi, int buf_size) {
+	rmi->send_buf_size = buf_size;
+	return 0;
+}
 
 int rmi_set_max_connect_num(struct rmi * rmi, int num) {
 	rmi->max_connect_num = num;
+	return 0;
+}
+
+int rmi_set_keepalive_time(struct rmi * rmi, int time) {
+	rmi->keepalive_time = time;
+	return 0;
+}
+
+void rmi_set_default_para(struct rmi * rmi) {
+	if (rmi->max_connect_num <= 0) {
+		rmi->max_connect_num = RMI_MAX_CONNECT;
+	}
+
+	if (rmi->timeout <= 0) {
+		rmi->timeout = RMI_DEFAULT_TIMEOUT;
+	}
+
+	if (rmi->mem_pool_size <= 0) {
+		rmi->mem_pool_size = RMI_DEFAULT_POOL_SIZE;
+	}
+
+	if (rmi->recv_buf_size <= 0) {
+		rmi->recv_buf_size = RMI_DEFAULT_RECV_BUF_SIZE;
+	}
+
+	if (rmi->send_buf_size <= 0) {
+		rmi->send_buf_size = RMI_DEFAULT_RECV_BUF_SIZE;
+	}
+
+	if (rmi->keepalive_time <= 0) {
+		rmi->keepalive_time = RMI_DEFAULT_KEEPALIVE_TIME;
+	}
+}
+
+int rmi_set_socket_type(struct rmi * rmi, int socket_type) {
+	rmi->socket_type = socket_type;
 	return 0;
 }
 
@@ -471,94 +514,6 @@ void gen_header(struct rmi_header * hdr, int id, int len, int seq) {
 	hdr->plen = len;
 }
 
-int invoke(struct rmi * rmi, int id, unsigned char * pbuf, int len, unsigned char ** r_buf, int * r_len) {
-	int r_ret = 0;
-	struct rmi_header hdr, hdr_orig;
-	struct rmi_header r_hdr;
-
-	if (rmi->fd <= 0) {
-		int fd = -1;
-	
-		fd = create_tcp_client_socket(rmi->server_ip, rmi->server_port);
-		if (fd < 0) {
-			trace("create_tcp_client_socket failed; host[%s], port[%d]\n", rmi->server_ip, rmi->server_port);
-			return -1;
-		}
-
-		set_fd_nonblock(fd);
-		
-		rmi->fd = fd;
-	}
-
-	*r_buf = NULL;
-	
-	gen_header(&hdr, id, len, rmi->seq++);
-	hdr_orig = hdr;
-	serialize_rmi_header(&hdr);
-
-	memcpy(pbuf, &hdr, sizeof(hdr));
-
-#if 0
-	// 发送消息头
-	r_ret = nonblock_write(rmi->fd, (unsigned char *)&hdr, sizeof(hdr), rmi->timeout);
-/*	r_ret = block_write(rmi->fd, (unsigned char *)&hdr, sizeof(hdr));*/
-	if (r_ret < 0) {
-		//trace("nonblock_write failed; err: %s\n", get_fd_error_str(r_ret));
-		goto exit;
-	}
-#endif
-
-	// 发送消息体
-	r_ret = nonblock_write(rmi->fd, pbuf, len+sizeof(struct rmi_header), rmi->timeout);
-/*	r_ret = block_write(rmi->fd, pbuf, len);*/
-	if (r_ret < 0) {
-		//trace("nonblock_write failed; err: %s\n", get_fd_error_str(r_ret));
-		goto socket_error;
-	}
-
-	// 获取返回值
-	r_ret = nonblock_read(rmi->fd, (unsigned char *)&r_hdr, sizeof(r_hdr), rmi->timeout);
-/*	r_ret = block_read(rmi->fd, (unsigned char *)&r_hdr, sizeof(r_hdr));*/
-	if (r_ret < 0) {
-		//trace("nonblock_read failed; err: %s\n", get_fd_error_str(r_ret));
-		goto socket_error;
-	}
-	deserialize_rmi_header(&r_hdr);
-
-	mem_reset_pool(rmi->mem_pool);
-	if (r_hdr.plen > 0) {
-		*r_len = r_hdr.plen;
-		*r_buf = mem_palloc(rmi->mem_pool, *r_len);
-		if (NULL == *r_buf) {
-			mem_reset_pool(rmi->mem_pool);
-			trace("malloc error\n");
-			r_ret = -1;
-			goto exit;
-		}
-		r_ret = nonblock_read(rmi->fd, *r_buf, *r_len, rmi->timeout);
-	/*	r_ret = block_read(rmi->fd, *r_buf, *r_len);*/
-		if (r_ret < 0) {
-			//trace("nonblock_read failed; err: %s\n", get_fd_error_str(r_ret));
-			goto socket_error;
-		}
-	}
-
-	if (0 != find_response(&hdr_orig, &r_hdr)) {
-		trace("recv error\n");
-		r_ret = -1;
-		goto exit;
-	}
-
-	return 0;
-
-socket_error:
-	close_fd(rmi->fd);
-	rmi->fd = -1;
-	
-exit:
-	return r_ret;
-}
-
 static int response(struct rmi * rmi, struct rmi_header * hdr, int error_code) {
 	int ret = 0;
 	
@@ -574,6 +529,373 @@ static int response(struct rmi * rmi, struct rmi_header * hdr, int error_code) {
 /*	}*/
 
 	return 0;
+}
+
+int rmi_recv(struct rmi * rmi, unsigned char ** r_buf, int * r_len) {
+	int ret = 0;
+	struct rmi_header hdr;
+	int len;
+	unsigned char * pdata = NULL;
+	
+	do {
+		mem_reset_pool(rmi->mem_pool);
+		ret = nonblock_read(rmi->fd, (unsigned char *)&hdr, sizeof(hdr), rmi->timeout);
+		if (ret < 0) {
+			//trace("nonblock_read failed; err: %s\n", get_fd_error_str(ret));
+			break;
+		}
+		deserialize_rmi_header(&hdr);
+		if (0 != verify_header(&hdr)) {
+			trace("verify_header failed\n");
+			ret = -1;
+			break;
+		}
+		len = hdr.plen + sizeof(hdr);
+		pdata = mem_palloc(rmi->mem_pool, len);
+		if (NULL == pdata) {
+			trace("malloc error\n");
+			break;
+		}
+		*r_buf = pdata;
+		*r_len = hdr.plen;
+
+		pdata += sizeof(hdr);
+		len -= sizeof(hdr);
+		while(len) {
+			int rd_len;
+			if (len > UDP_BURST_LEN) {
+				rd_len = UDP_BURST_LEN;
+			} else {
+				rd_len = len;
+			}			
+			ret = nonblock_read(rmi->fd, pdata, rd_len, rmi->timeout);
+			if (ret < 0) {
+				//trace("nonblock_read failed; err: %s\n", get_fd_error_str(ret));
+				break;
+			}
+			pdata += rd_len;
+			len -= rd_len;
+		}
+
+		memcpy(*r_buf, &hdr, sizeof(hdr));
+	} while(0);
+	
+	return ret;
+}
+
+int rmi_send(struct rmi * rmi, unsigned char * pbuf, int len) {
+	int ret = 0;
+	if (RMI_SOCKET_TCP == rmi->socket_type) {
+		ret = nonblock_write(rmi->fd, pbuf, len, rmi->timeout);
+		if (ret < 0) {
+			//trace("nonblock_write failed; err: %s\n", get_fd_error_str(ret));
+			return ret;
+		}		
+ 	} else {
+		ret = nonblock_write(rmi->fd, pbuf, sizeof(struct rmi_header), rmi->timeout);
+		if (ret < 0) {
+			//trace("nonblock_write failed; err: %s\n", get_fd_error_str(ret));
+			return ret;
+		}
+		len -= sizeof(struct rmi_header);
+		pbuf += sizeof(struct rmi_header);
+		while(len) {
+			int wr_len;
+			if (len > UDP_BURST_LEN) {
+				wr_len = UDP_BURST_LEN;
+			} else {
+				wr_len = len;
+			}
+			ret = nonblock_write(rmi->fd, pbuf, wr_len, rmi->timeout);
+/*			ret = block_write(rmi->fd, pbuf, wr_len);*/
+			if (ret < 0) {
+				//trace("nonblock_write failed; err: %s\n", get_fd_error_str(ret));
+				return ret;
+			}
+			pbuf += wr_len;
+			len -= wr_len;
+		}
+	}
+
+	return 0;
+}
+
+int udp_accept(struct rmi * rmi) {
+	int ret = 0;	
+	struct rmi_header hdr;
+	
+	char src_ip[16] = {0};
+	unsigned short port;
+
+	int client_fd;
+	
+	ret = udp_recv(rmi->fd, (unsigned char *)&hdr, sizeof(hdr), src_ip, &port);
+	if (sizeof(hdr) != ret) {
+		return -1;
+	}
+	serialize_rmi_header(&hdr);
+	
+	if (0 != rmi->peer_ip[0]) {
+		memcpy(src_ip, rmi->peer_ip, strlen(rmi->peer_ip));
+		src_ip[strlen(rmi->peer_ip)] = 0;
+	}
+
+	if (rmi->peer_port > 0) {
+		port = rmi->peer_port;
+	}
+
+	client_fd = create_udp_client_socket(src_ip, port);
+	if (client_fd <= 0) {
+		trace("create_udp_client_socket\n");
+		return -1;;						
+	}
+
+	response(NULL, &hdr, 0);
+	ret = nonblock_write(client_fd, (unsigned char *)&hdr, sizeof(hdr), rmi->timeout);
+	if (ret < 0) {
+		trace("nonblock_write failed\n");
+		close_fd(client_fd);
+		return -1;
+	}
+
+	ret = nonblock_read(client_fd, (unsigned char *)&hdr, sizeof(hdr), rmi->timeout);
+	if (ret < 0) {
+		trace("nonblock_read failed\n");
+		close_fd(client_fd);
+		return -1;
+	}
+
+	set_fd_sendbuf(client_fd, rmi->send_buf_size);
+	set_fd_recvbuf(client_fd, rmi->recv_buf_size);
+
+	return client_fd;
+}
+
+int udp_connect(struct rmi * rmi, char * host, unsigned short port) {
+	int fd = -1;
+	int ret = 0;
+	
+	char dst_ip[16] = {0};
+	unsigned short dst_port;
+#if 0
+	unsigned char * pdata;
+#else
+	struct rmi_header hdr, hdr_orig, r_hdr;
+#endif
+	int len;
+	
+	fd = create_udp_client_socket(NULL, port);
+	if (fd < 0) {
+		trace("create_udp_client_socket failed; host[%s], port[%d]\n", host, port);
+		return -1;
+	}
+
+	// sync to server
+	gen_header(&hdr, 0, 0, 0);
+	hdr_orig = hdr;
+	serialize_rmi_header(&hdr);
+	
+	ret = udp_send(fd, (unsigned char *)&hdr, sizeof(hdr), host, port);
+	if (ret < 0) {
+		trace("udp_send failed\n");
+		goto failed;
+	}
+
+	if (0 != read_fd_timeout(fd, NULL, 0, rmi->timeout)) {
+		goto failed;
+	}
+	
+	len = udp_recv(fd, (unsigned char *)&r_hdr, sizeof(r_hdr), dst_ip, &dst_port);
+	if (len != sizeof(r_hdr)) {
+		trace("recv error\n");
+		goto failed;
+	}
+	serialize_rmi_header(&r_hdr);
+	
+	if (0 != find_response(&hdr_orig, &r_hdr)) {
+		trace("recv error\n");
+		goto failed;
+	}
+	udp_set_dst(fd, dst_ip, dst_port);
+	
+	ret = nonblock_write(fd, (unsigned char *)&hdr, sizeof(hdr), rmi->timeout);
+	if (ret < 0) {
+		trace("nonblock_write failed\n");
+		goto failed;
+	}
+	rmi->fd = fd;	
+
+	set_fd_sendbuf(fd, rmi->send_buf_size);
+	set_fd_recvbuf(fd, rmi->recv_buf_size);
+
+	return 0;
+
+failed:
+	close_fd(fd);
+	rmi->fd = -1;
+	return -1;
+}
+
+int rmi_create_sock(struct rmi * rmi, unsigned short port) {	
+	switch(rmi->socket_type) {
+	case RMI_SOCKET_UDP : 
+		rmi->fd = create_udp_server_socket(port);
+		if (rmi->fd < 0) {
+			trace("create_udp_server_socket failed; port[%d]\n", port);
+			goto failed;
+		}
+		break;
+	case RMI_SOCKET_TCP :
+		rmi->fd = create_tcp_server_socket(port);
+		if (rmi->fd < 0) {
+			trace("create_tcp_server_socket failed; port[%d]\n", port);
+			goto failed;
+		}
+		break;
+	default :
+		trace("socket type[%d] not support now!\n", rmi->socket_type);
+		goto failed;
+	}
+
+	set_fd_nonblock(rmi->fd);
+
+	return 0;
+
+failed:
+	return -1;
+}
+
+int rmi_accept(struct rmi * rmi) {
+	int client_fd;
+	if (RMI_SOCKET_TCP == rmi->socket_type) {
+		client_fd = tcp_accept(rmi->fd);
+		if (client_fd <= 0) {
+			trace("tcp_accept error, fd: %d\n", rmi->fd);
+			return -1;						
+		}
+	} else {
+		client_fd = udp_accept(rmi);
+		if (client_fd <= 0) {
+			trace("create_udp_client_socket\n");
+			return -1;						
+		}
+	}
+
+	set_fd_nonblock(client_fd);
+
+	return client_fd;
+}
+
+int rmi_conncet(struct rmi * rmi, char * host, unsigned short port) {
+	int fd = -1;
+
+	switch(rmi->socket_type) {
+	case RMI_SOCKET_UDP : 
+		if (0 != udp_connect(rmi, host, port)) {
+			trace("udp_connect failed\n");
+			goto failed;
+		}
+		break;
+	case RMI_SOCKET_TCP :	
+		fd = create_tcp_client_socket(host, port);
+		if (fd < 0) {
+			trace("create_tcp_client_socket failed; host[%s], port[%d]\n", host, port);
+			return -1;
+		}	
+		rmi->fd = fd;
+		break;
+	default :
+		trace("socket type[%d] not support now!\n", rmi->socket_type);
+		goto failed;
+	}
+
+	set_fd_nonblock(rmi->fd);
+
+	return 0;
+
+failed:
+	return -1;
+}
+
+int rmi_disconncet(struct rmi * rmi) {
+	struct rmi_header hdr;
+	
+	switch(rmi->socket_type) {
+	case RMI_SOCKET_UDP : 
+		gen_header(&hdr, 0, 0, 0);
+		hdr.mtype = RMI_CLOSE;
+		serialize_rmi_header(&hdr);
+		rmi_send(rmi, (unsigned char *)&hdr, sizeof(hdr));
+		msleep(1);
+		rmi_send(rmi, (unsigned char *)&hdr, sizeof(hdr));
+		msleep(1);
+		rmi_send(rmi, (unsigned char *)&hdr, sizeof(hdr));
+		break;
+	case RMI_SOCKET_TCP :	
+		break;
+	default :
+		trace("socket type[%d] not support now!\n", rmi->socket_type);
+		return -1;
+	}
+	
+	if (rmi->fd > 0) {
+		close_fd(rmi->fd);
+		rmi->fd = -1;
+	}
+
+	return 0;
+}
+
+int invoke(struct rmi * rmi, int id, unsigned char * pbuf, int len, unsigned char ** r_buf, int * r_len) {
+	int r_ret = 0;
+	struct rmi_header hdr, hdr_orig;
+
+	if (rmi->fd <= 0) {
+		r_ret = rmi_conncet(rmi, rmi->server_ip, rmi->server_port);
+		if (r_ret < 0) {
+			trace("rmi_conncet failed; host[%s], port[%d]\n", rmi->server_ip, rmi->server_port);
+			return -1;
+		}
+	}
+
+	*r_buf = NULL;
+	
+	gen_header(&hdr, id, len, rmi->seq++);
+	hdr_orig = hdr;
+	serialize_rmi_header(&hdr);
+
+	memcpy(pbuf, &hdr, sizeof(hdr));
+
+	// 发送消息
+	r_ret = rmi_send(rmi, pbuf, len+sizeof(struct rmi_header));
+	if (r_ret < 0) {
+		//trace("nonblock_write failed; err: %s\n", get_fd_error_str(ret));
+		goto socket_error;
+	}
+	
+
+	// 获取返回值
+	r_ret = rmi_recv(rmi, r_buf, r_len);
+	if (r_ret < 0) {
+		//trace("rmi_recv failed; err: %s\n", get_fd_error_str(ret));
+		goto socket_error;
+	}
+
+	if (0 != find_response(&hdr_orig, (struct rmi_header *)(*r_buf))) {
+		trace("recv error\n");
+		r_ret = -1;
+		goto exit;
+	}
+
+	*r_buf += sizeof(struct rmi_header);
+
+	return 0;
+
+socket_error:
+	rmi_disconncet(rmi);
+	
+exit:
+	return r_ret;
 }
 
 int rmi_cmp_fd(void * src, void * dst) {
@@ -593,7 +915,6 @@ int rmi_operate_close(void * src, void * dst) {
 
 	return 0;
 }
-
 void * rmi_listen_thread(void * arg) {
 	int ret = 0;
 	struct rmi * rmi = (struct rmi *)arg;	
@@ -605,17 +926,17 @@ void * rmi_listen_thread(void * arg) {
 		if (0 != read_fd_timeout(rmi->fd, NULL, 0, rmi->timeout)) {
 			continue;
 		}
-		client_fd = tcp_accept(rmi->fd);
-		if (client_fd <= 0) {
-			trace("tcp_accept error, fd: %d\n", rmi->fd);
-			continue;						
+		client_fd = rmi_accept(rmi);
+		if (client_fd < 0) {
+			trace("rmi_accept failed\n");
+			continue;
 		}
 		if (pool_size(rmi->user_data) >= rmi->max_connect_num) {
 			trace("connect is full\n");
 			close_fd(client_fd);
 			continue;
 		}
-		client_rmi = malloc(sizeof(struct rmi));
+		client_rmi = calloc(1, sizeof(struct rmi));
 		if (NULL == client_rmi) {
 			trace("malloc failed\n");
 			close_fd(client_fd);
@@ -630,12 +951,18 @@ void * rmi_listen_thread(void * arg) {
 		}
 		client_rmi->mem_pool_size = rmi->mem_pool_size;
 
-		set_fd_nonblock(client_fd);
+/*		set_fd_nonblock(client_fd);*/
 		
 		client_rmi->fd = client_fd;
 		client_rmi->timeout = rmi->timeout;
 		client_rmi->user_data = rmi;
 		client_rmi->thread_start = 1;
+
+		// copy some server rmi info to client rmi
+		client_rmi->socket_type = rmi->socket_type;
+		client_rmi->recv_buf_size = rmi->recv_buf_size;
+		client_rmi->send_buf_size = rmi->send_buf_size;
+		client_rmi->keepalive_time = rmi->keepalive_time;
 		
 		client_rmi->struct_num = rmi->struct_num;
 		client_rmi->struct_pair = rmi->struct_pair;
@@ -661,7 +988,7 @@ void * rmi_server_thread(void * arg) {
 	struct rmi * rmi = (struct rmi *)arg;
 	struct rmi * server_rmi = rmi->user_data;
 	int ret = 0;
-	struct rmi_header hdr;
+	struct rmi_header * p_hdr;
 	unsigned char * pdata;
 	unsigned char * pbuf;
 	int len;
@@ -674,61 +1001,57 @@ void * rmi_server_thread(void * arg) {
 	while(rmi->thread_start) {
 		int error_code = 0;
 		
-		if (0 != read_fd_timeout(rmi->fd, NULL, 0, rmi->timeout)) {
-			continue;
+		if (0 != read_fd_timeout(rmi->fd, NULL, 0, rmi->keepalive_time)) {
+			printf("keepalive timeout\n");
+			break;
 		}
-		mem_reset_pool(rmi->mem_pool);
-		ret = nonblock_read(rmi->fd, (unsigned char *)&hdr, sizeof(hdr), rmi->timeout);
+
+		ret = rmi_recv(rmi, &pdata, &len);	
 		if (ret < 0) {
-			//trace("nonblock_read failed; err: %s\n", get_fd_error_str(ret));
+			//trace("rmi_recv failed; err: %s\n", get_fd_error_str(ret));
 			break;
 		}
-		deserialize_rmi_header(&hdr);
-		if (0 != verify_header(&hdr)) {
-			trace("verify_header failed\n");
-			break;
-		}
-		pdata = mem_palloc(rmi->mem_pool, hdr.plen);
-		if (NULL == pdata) {
-			trace("malloc error\n");
-			break;
-		}
-		ret = nonblock_read(rmi->fd, pdata, hdr.plen, rmi->timeout);
-		if (ret < 0) {
-			//trace("nonblock_read failed; err: %s\n", get_fd_error_str(ret));
+
+		p_hdr = (struct rmi_header *)pdata;
+		pdata += sizeof(struct rmi_header);
+
+		// exit from udp
+		if (RMI_CLOSE == p_hdr->mtype) {
 			break;
 		}
 
 		do {			
-			if ((func_entry = get_func_entry(rmi, hdr.funcid)) == NULL) {
+			if ((func_entry = get_func_entry(rmi, p_hdr->funcid)) == NULL) {
 				trace("req interface is not support now!\n");
 				len = 0;
 				error_code = 2;
-				pbuf = (unsigned char *)&hdr;
+				pbuf = (unsigned char *)p_hdr;
 				break;
 			}	
 
-			if (0 != func_entry->invoke_func(rmi, func_entry, pdata, hdr.plen, &pbuf, &len)) {
-				trace("func[%d] failed!\n", hdr.funcid);
+			if (0 != func_entry->invoke_func(rmi, func_entry, pdata, p_hdr->plen, &pbuf, &len)) {
+				trace("func[%d] failed!\n", p_hdr->funcid);
 				len = 0;
 				error_code = 3;
-				pbuf = (unsigned char *)&hdr;
+				pbuf = (unsigned char *)p_hdr;
 				break;
 			}
 		} while(0);
 
-		hdr.plen = len;
-		response(rmi, &hdr, error_code);
+		p_hdr->plen = len;
+		response(rmi, p_hdr, error_code);
 		if (len) {
-			memcpy(pbuf, &hdr, sizeof(hdr));
+			memcpy(pbuf, p_hdr, sizeof(struct rmi_header));
 		}
-
-		ret = nonblock_write(rmi->fd, pbuf, len+sizeof(hdr), rmi->timeout);
+		
+		ret = rmi_send(rmi, pbuf, len+sizeof(struct rmi_header));
 		if (ret < 0) {
 			//trace("nonblock_write failed; err: %s\n", get_fd_error_str(ret));
 			break;
 		}
 	}
+
+/*	printf("server thread exit\n");*/
 
 	rmi->thread_start = 0;
 	pool_erase_it(server_rmi->user_data, rmi, rmi_cmp_fd);
@@ -753,25 +1076,12 @@ void * rmi_server_thread(void * arg) {
 }
 
 int rmi_server_start(struct rmi * rmi, unsigned short port) {
-	if (rmi->max_connect_num <= 0) {
-		rmi->max_connect_num = RMI_MAX_CONNECT;
-	}
+	rmi_set_default_para(rmi);
 
-	if (rmi->timeout <= 0) {
-		rmi->timeout = RMI_DEFAULT_TIMEOUT;
-	}
-
-	if (rmi->mem_pool_size <= 0) {
-		rmi->mem_pool_size = RMI_DEFAULT_POOL_SIZE;
-	}
-	
-	rmi->fd = create_tcp_server_socket(port);
-	if (rmi->fd < 0) {
-		trace("create_tcp_server_socket failed; port[%d]\n", port);
+	if (0 != rmi_create_sock(rmi, port)) {
+		trace("rmi_create_sock failed\n");
 		goto failed;
 	}
-
-	set_fd_nonblock(rmi->fd);
 
 	rmi->user_data = malloc(sizeof(POOL_S));
 	if (NULL == rmi->user_data) {
@@ -838,23 +1148,7 @@ int rmi_server_close(struct rmi * rmi) {
 int rmi_client_start(struct rmi * rmi, char * host, unsigned short port) {
 	int fd = -1;
 	
-	fd = create_tcp_client_socket(host, port);
-	if (fd < 0) {
-		trace("create_tcp_client_socket failed; host[%s], port[%d]\n", host, port);
-		return -1;
-	}
-
-	set_fd_nonblock(fd);
-	
-	rmi->fd = fd;
-
-	if (rmi->timeout <= 0) {
-		rmi->timeout = RMI_DEFAULT_TIMEOUT;
-	}
-
-	if (rmi->mem_pool_size <= 0) {
-		rmi->mem_pool_size = RMI_DEFAULT_POOL_SIZE;
-	}
+	rmi_set_default_para(rmi);
 
 	rmi->mem_pool = mem_create_pool(rmi->mem_pool_size);
 	if (NULL == rmi->mem_pool) {
@@ -862,17 +1156,36 @@ int rmi_client_start(struct rmi * rmi, char * host, unsigned short port) {
 		return -1;
 	}
 
+	if (0 != rmi_conncet(rmi, host, port)) {
+		trace("rmi_conncet failed\n");
+		goto failed;
+	}
+	
 	memcpy(rmi->server_ip, host, strlen(host));
 	rmi->server_port = port;
 
 	return 0;
+
+failed:
+	if (rmi->fd > 0) {
+		close_fd(rmi->fd);
+	}
+	
+	if (rmi->user_data) {
+		free(rmi->user_data);
+		rmi->user_data = NULL;
+	}
+
+	if (rmi->mem_pool) {
+		mem_destroy_pool(rmi->mem_pool);
+		rmi->mem_pool = NULL;
+	}
+	return -1;
 }
 
 int rmi_client_close(struct rmi * rmi) {
-	if (rmi->fd > 0) {
-		close_fd(rmi->fd);
-		rmi->fd = -1;
-	}
+	rmi_disconncet(rmi);
+	
 	if (rmi->user_data) {
 		free(rmi->user_data);
 		rmi->user_data = NULL;
