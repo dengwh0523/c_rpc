@@ -134,6 +134,7 @@ struct rmi {
 	// for udp
 	char peer_ip[16];
 	unsigned short peer_port;
+	int broadcast;
 	int recv_buf_size;
 	int send_buf_size;
 
@@ -179,6 +180,7 @@ int rmi_set_max_connect_num(struct rmi * rmi, int num);
 int rmi_set_recv_buf_size(struct rmi * rmi, int buf_size);
 int rmi_set_send_buf_size(struct rmi * rmi, int buf_size);
 int rmi_set_socket_type(struct rmi * rmi, int socket_type);
+int rmi_set_broadcast(struct rmi * rmi);
 
 void rmi_lock(struct rmi * rmi);
 void rmi_unlock(struct rmi * rmi);

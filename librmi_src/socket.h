@@ -42,6 +42,7 @@ int set_fd_reuse(int fd);
 int set_fd_nonblock(int fd);
 int set_fd_recvbuf(int fd, int recv_buf);
 int set_fd_sendbuf(int fd, int send_buf);
+int set_fd_broadcast(int fd);
 
 // fd read write fuction
 int read_fd_timeout(int fd, unsigned char * pbuf, int len, int timeout/*ms*/);

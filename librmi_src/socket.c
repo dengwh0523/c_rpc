@@ -264,6 +264,8 @@ int create_udp_server_socket(unsigned short port) {
 		goto exit;
 	}
 	
+	set_fd_broadcast(fd);
+	
 	bind_addr.sin_family = AF_INET;
 	bind_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	bind_addr.sin_port = htons(port);
@@ -293,6 +295,7 @@ int create_udp_client_socket(char * dst_ip, unsigned short port) {
 		trace("socket error\n");
 		return -1;
 	}
+	set_fd_broadcast(fd);
 
 	if (dst_ip) {
 		dest_addr.sin_family = AF_INET;
@@ -331,9 +334,7 @@ int udp_send(int fd, unsigned char * pbuf, int len, char * dst_ip, unsigned shor
 	dst_addr.sin_addr.s_addr = inet_addr(dst_ip);
 	dst_addr.sin_port = htons(port);
 
-	sendto(fd, pbuf, len, 0, (struct sockaddr *)&dst_addr, sizeof(dst_addr));
-
-	return 0;
+	return sendto(fd, pbuf, len, 0, (struct sockaddr *)&dst_addr, sizeof(dst_addr));
 }
 
 int udp_recv(int fd, unsigned char * pbuf, int len, char * src_ip, unsigned short * port ) {
@@ -420,6 +421,11 @@ int set_fd_recvbuf(int fd, int recv_buf) {
 
 int set_fd_sendbuf(int fd, int send_buf) {
 	return setsockopt(fd, SOL_SOCKET, SO_SNDBUF, (char *)&send_buf, sizeof(send_buf));
+}
+
+int set_fd_broadcast(int fd) {
+	int bbroadcast = 1;	
+	return setsockopt(fd, SOL_SOCKET, SO_BROADCAST,(char*)&bbroadcast,sizeof(int));
 }
 
 int read_fd_timeout(int fd, unsigned char * pbuf, int len, int timeout/* unit: ms */) {

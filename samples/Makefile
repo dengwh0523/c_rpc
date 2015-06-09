@@ -22,14 +22,15 @@ all: server client
 rmiparse_middleman : test.h
 	make -C $(RMI_DIR)
 	../bin/rmiparse test.h test
+	../bin/rmiparse find_device.h find
 	#cp ../lib/librmi.so .
 	@touch rmiparse_middleman
 
 server: rmiparse_middleman server.c
-	$(CC) -o $@ server.c test_stub.c $(LIBS) $(LIB_DIR) $(INC_DIRS) $(CFLAG)
+	$(CC) -o $@ server.c test_stub.c find_proxier.c $(LIBS) $(LIB_DIR) $(INC_DIRS) $(CFLAG)
 	
 client: rmiparse_middleman client.c
-	$(CC) -o $@ client.c test_proxier.c $(LIBS) $(LIB_DIR) $(INC_DIRS) $(CFLAG)
+	$(CC) -o $@ client.c test_proxier.c find_stub.c $(LIBS) $(LIB_DIR) $(INC_DIRS) $(CFLAG)
 	
 clean:
 	-rm -f server client *.so *.a

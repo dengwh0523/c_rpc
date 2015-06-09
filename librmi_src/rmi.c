@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #define UDP_BURST_LEN	(32*1024)
+#define BROADCAST_ADDR	"255.255.255.255"
 
 void * rmi_listen_thread(void * arg);
 void * rmi_server_thread(void * arg);
@@ -102,6 +103,11 @@ void rmi_set_default_para(struct rmi * rmi) {
 
 int rmi_set_socket_type(struct rmi * rmi, int socket_type) {
 	rmi->socket_type = socket_type;
+	return 0;
+}
+
+int rmi_set_broadcast(struct rmi * rmi) {
+	rmi->broadcast = 1;
 	return 0;
 }
 
@@ -592,7 +598,11 @@ int rmi_send(struct rmi * rmi, unsigned char * pbuf, int len) {
 			return ret;
 		}		
  	} else {
-		ret = nonblock_write(rmi->fd, pbuf, sizeof(struct rmi_header), rmi->timeout);
+ 		if (rmi->broadcast) {
+			ret = udp_send(rmi->fd, pbuf, sizeof(struct rmi_header), BROADCAST_ADDR, rmi->peer_port);
+ 		} else {
+			ret = nonblock_write(rmi->fd, pbuf, sizeof(struct rmi_header), rmi->timeout);
+ 		}
 		if (ret < 0) {
 			//trace("nonblock_write failed; err: %s\n", get_fd_error_str(ret));
 			return ret;
@@ -605,9 +615,12 @@ int rmi_send(struct rmi * rmi, unsigned char * pbuf, int len) {
 				wr_len = UDP_BURST_LEN;
 			} else {
 				wr_len = len;
+			} 		
+			if (rmi->broadcast) {
+				ret = udp_send(rmi->fd, pbuf, wr_len, BROADCAST_ADDR, rmi->peer_port);
+			} else {
+				ret = nonblock_write(rmi->fd, pbuf, wr_len, rmi->timeout);
 			}
-			ret = nonblock_write(rmi->fd, pbuf, wr_len, rmi->timeout);
-/*			ret = block_write(rmi->fd, pbuf, wr_len);*/
 			if (ret < 0) {
 				//trace("nonblock_write failed; err: %s\n", get_fd_error_str(ret));
 				return ret;
@@ -628,6 +641,7 @@ int udp_accept(struct rmi * rmi) {
 	unsigned short port;
 
 	int client_fd;
+	char * host;
 	
 	ret = udp_recv(rmi->fd, (unsigned char *)&hdr, sizeof(hdr), src_ip, &port);
 	if (sizeof(hdr) != ret) {
@@ -635,27 +649,43 @@ int udp_accept(struct rmi * rmi) {
 	}
 	serialize_rmi_header(&hdr);
 	
-	if (0 != rmi->peer_ip[0]) {
-		memcpy(src_ip, rmi->peer_ip, strlen(rmi->peer_ip));
-		src_ip[strlen(rmi->peer_ip)] = 0;
+/*	if (0 != rmi->peer_ip[0]) {*/
+/*		memcpy(src_ip, rmi->peer_ip, strlen(rmi->peer_ip));*/
+/*		src_ip[strlen(rmi->peer_ip)] = 0;*/
+/*	}*/
+/**/
+/*	if (rmi->peer_port > 0) {*/
+/*		port = rmi->peer_port;*/
+/*	}*/
+	strcpy(rmi->peer_ip, src_ip);
+	rmi->peer_port = port;
+	
+	if (rmi->broadcast) {
+		host = NULL;
+	} else {
+		host = src_ip;
 	}
-
-	if (rmi->peer_port > 0) {
-		port = rmi->peer_port;
-	}
-
-	client_fd = create_udp_client_socket(src_ip, port);
+	client_fd = create_udp_client_socket(host, port);
 	if (client_fd <= 0) {
 		trace("create_udp_client_socket\n");
 		return -1;;						
 	}
 
 	response(NULL, &hdr, 0);
-	ret = nonblock_write(client_fd, (unsigned char *)&hdr, sizeof(hdr), rmi->timeout);
-	if (ret < 0) {
-		trace("nonblock_write failed\n");
-		close_fd(client_fd);
-		return -1;
+
+	if (rmi->broadcast) {
+		ret = udp_send(client_fd, (unsigned char *)&hdr, sizeof(hdr), BROADCAST_ADDR, port);
+		if (ret <= 0) {
+			trace("udp_send failed\n");
+			return -1;
+		}
+	} else {
+		ret = nonblock_write(client_fd, (unsigned char *)&hdr, sizeof(hdr), rmi->timeout);
+		if (ret < 0) {
+			trace("nonblock_write failed\n");
+			close_fd(client_fd);
+			return -1;
+		}
 	}
 
 	ret = nonblock_read(client_fd, (unsigned char *)&hdr, sizeof(hdr), rmi->timeout);
@@ -677,11 +707,7 @@ int udp_connect(struct rmi * rmi, char * host, unsigned short port) {
 	
 	char dst_ip[16] = {0};
 	unsigned short dst_port;
-#if 0
-	unsigned char * pdata;
-#else
 	struct rmi_header hdr, hdr_orig, r_hdr;
-#endif
 	int len;
 	
 	fd = create_udp_client_socket(NULL, port);
@@ -715,13 +741,33 @@ int udp_connect(struct rmi * rmi, char * host, unsigned short port) {
 	if (0 != find_response(&hdr_orig, &r_hdr)) {
 		trace("recv error\n");
 		goto failed;
-	}
-	udp_set_dst(fd, dst_ip, dst_port);
+	}	
 	
-	ret = nonblock_write(fd, (unsigned char *)&hdr, sizeof(hdr), rmi->timeout);
-	if (ret < 0) {
-		trace("nonblock_write failed\n");
-		goto failed;
+/*	if (0 != rmi->peer_ip[0]) {*/
+/*		memcpy(dst_ip, rmi->peer_ip, strlen(rmi->peer_ip));*/
+/*		dst_ip[strlen(rmi->peer_ip)] = 0;*/
+/*	}*/
+/**/
+/*	if (rmi->peer_port > 0) {*/
+/*		dst_port = rmi->peer_port;*/
+/*	}*/
+	strcpy(rmi->peer_ip, dst_ip);
+	rmi->peer_port = dst_port;
+
+	if (rmi->broadcast) {
+		ret = udp_send(fd, (unsigned char *)&hdr, sizeof(hdr), BROADCAST_ADDR, dst_port);
+		if (ret <= 0) {
+			trace("udp_send failed\n");
+			goto failed;
+		}
+	} else {
+		udp_set_dst(fd, dst_ip, dst_port);
+		
+		ret = nonblock_write(fd, (unsigned char *)&hdr, sizeof(hdr), rmi->timeout);
+		if (ret < 0) {
+			trace("nonblock_write failed\n");
+			goto failed;
+		}
 	}
 	rmi->fd = fd;	
 
@@ -963,6 +1009,9 @@ void * rmi_listen_thread(void * arg) {
 		client_rmi->recv_buf_size = rmi->recv_buf_size;
 		client_rmi->send_buf_size = rmi->send_buf_size;
 		client_rmi->keepalive_time = rmi->keepalive_time;
+		client_rmi->broadcast = rmi->broadcast;
+		client_rmi->peer_port = rmi->peer_port;
+		strcpy(client_rmi->peer_ip, rmi->peer_ip);
 		
 		client_rmi->struct_num = rmi->struct_num;
 		client_rmi->struct_pair = rmi->struct_pair;
@@ -1051,8 +1100,6 @@ void * rmi_server_thread(void * arg) {
 		}
 	}
 
-/*	printf("server thread exit\n");*/
-
 	rmi->thread_start = 0;
 	pool_erase_it(server_rmi->user_data, rmi, rmi_cmp_fd);
 
@@ -1068,7 +1115,7 @@ void * rmi_server_thread(void * arg) {
 		free(rmi->user_data);
 		rmi->user_data = NULL;
 	}
-	//printf("!!!! connect num2: %d !!!!!!!!!!\n", pool_size(server_rmi->user_data));
+/*	printf("!!!! connect num2: %d !!!!!!!!!!\n", pool_size(server_rmi->user_data));*/
 
 	free(rmi);
 
