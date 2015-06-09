@@ -137,6 +137,7 @@ struct rmi {
 	int broadcast;
 	int recv_buf_size;
 	int send_buf_size;
+	int no_ack;
 
 	int keepalive_time;
 	
@@ -181,6 +182,8 @@ int rmi_set_recv_buf_size(struct rmi * rmi, int buf_size);
 int rmi_set_send_buf_size(struct rmi * rmi, int buf_size);
 int rmi_set_socket_type(struct rmi * rmi, int socket_type);
 int rmi_set_broadcast(struct rmi * rmi);
+int rmi_set_noack(struct rmi * rmi);
+int rmi_set_keepalive_time(struct rmi * rmi, int time);
 
 void rmi_lock(struct rmi * rmi);
 void rmi_unlock(struct rmi * rmi);

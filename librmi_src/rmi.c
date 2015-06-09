@@ -75,6 +75,21 @@ int rmi_set_keepalive_time(struct rmi * rmi, int time) {
 	return 0;
 }
 
+int rmi_set_socket_type(struct rmi * rmi, int socket_type) {
+	rmi->socket_type = socket_type;
+	return 0;
+}
+
+int rmi_set_broadcast(struct rmi * rmi) {
+	rmi->broadcast = 1;
+	return 0;
+}
+
+int rmi_set_noack(struct rmi * rmi) {
+	rmi->no_ack = 1;
+	return 0;
+}
+
 void rmi_set_default_para(struct rmi * rmi) {
 	if (rmi->max_connect_num <= 0) {
 		rmi->max_connect_num = RMI_MAX_CONNECT;
@@ -99,16 +114,6 @@ void rmi_set_default_para(struct rmi * rmi) {
 	if (rmi->keepalive_time <= 0) {
 		rmi->keepalive_time = RMI_DEFAULT_KEEPALIVE_TIME;
 	}
-}
-
-int rmi_set_socket_type(struct rmi * rmi, int socket_type) {
-	rmi->socket_type = socket_type;
-	return 0;
-}
-
-int rmi_set_broadcast(struct rmi * rmi) {
-	rmi->broadcast = 1;
-	return 0;
 }
 
 static int struct_name_cmp(void * data, void * id) {
@@ -251,14 +256,15 @@ int set_varint_signed(const unsigned char * pdata, const int len, unsigned char 
 int get_varint_signed(unsigned char * pdata, const int len, const unsigned char * pbuf) {
 	int r_len = 0;
 	unsigned long long value_unsigned = 0;
-	long long value;
+	long long value, mask;
 
 	r_len = get_varint((unsigned char *)&value_unsigned, len, pbuf);
 	if (value_unsigned & 0x01) {
-		value = 0 - (value_unsigned>>1);
+		mask = -1;
 	} else {
-		value = value_unsigned>>1;
+		mask = 0;
 	}
+	value = (value_unsigned>>1) ^ mask;
 	
 	if (pdata) {
 		switch(len) {
@@ -720,7 +726,10 @@ int udp_connect(struct rmi * rmi, char * host, unsigned short port) {
 	gen_header(&hdr, 0, 0, 0);
 	hdr_orig = hdr;
 	serialize_rmi_header(&hdr);
-	
+
+	if (rmi->broadcast) {
+		host = BROADCAST_ADDR;
+	}
 	ret = udp_send(fd, (unsigned char *)&hdr, sizeof(hdr), host, port);
 	if (ret < 0) {
 		trace("udp_send failed\n");
@@ -1087,6 +1096,11 @@ void * rmi_server_thread(void * arg) {
 			}
 		} while(0);
 
+		if (RMI_SOCKET_UDP == rmi->socket_type && rmi->no_ack) {
+			rmi->no_ack = 0;
+			continue;
+		}
+
 		p_hdr->plen = len;
 		response(rmi, p_hdr, error_code);
 		if (len) {
@@ -1208,7 +1222,9 @@ int rmi_client_start(struct rmi * rmi, char * host, unsigned short port) {
 		goto failed;
 	}
 	
-	memcpy(rmi->server_ip, host, strlen(host));
+	if (host) {
+		memcpy(rmi->server_ip, host, strlen(host));
+	}
 	rmi->server_port = port;
 
 	return 0;
