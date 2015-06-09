@@ -27,9 +27,7 @@ void * test_proc() {
 	
 	rmi = &client_rmi;
 	RMI_INIT_CLIENT(rmi, test);	
-	rmi_set_socket_type(rmi, RMI_SOCKET_UDP);
-	rmi_set_recv_buf_size(rmi, 2*1024*1024);
-	rmi_set_send_buf_size(rmi, 2*1024*1024);
+/*	rmi_set_socket_type(rmi, RMI_SOCKET_UDP);*/
 	rmi_set_timeout(rmi, 500);
 	if (0 != rmi_client_start(rmi, server_ip, server_port)) {
 		trace("rmi_client_start failed\n");

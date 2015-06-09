@@ -3,7 +3,7 @@
 
 #include "rmi.h"
 
-#define TEST_MACRO	50
+#define TEST_MACRO	30
 
 #ifdef __cplusplus
 extern "C" {

@@ -136,9 +136,7 @@ int main(int argc, char * argv[]) {
     sigaction(SIGPIPE, &act, NULL);
 
 	RMI_INIT_SERVER(&server_rmi, test);
-	rmi_set_socket_type(&server_rmi, RMI_SOCKET_UDP);
-	rmi_set_recv_buf_size(&server_rmi, 2*1024*1024);
-	rmi_set_send_buf_size(&server_rmi, 2*1024*1024);
+/*	rmi_set_socket_type(&server_rmi, RMI_SOCKET_UDP);*/
 	rmi_server_start(&server_rmi, port);
 
 	getchar();

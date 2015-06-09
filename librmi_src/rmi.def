@@ -5,6 +5,9 @@ EXPORTS
 	rmi_set_timeout
 	rmi_set_mem_pool_size
 	rmi_set_max_connect_num
+	rmi_set_socket_type
+	rmi_set_send_buf_size
+	rmi_set_recv_buf_size
 	rmi_server_start
 	rmi_server_close
 	rmi_client_start
