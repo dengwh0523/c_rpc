@@ -923,12 +923,12 @@ int invoke(struct rmi * rmi, int id, unsigned char * pbuf, int len, unsigned cha
 	memcpy(pbuf, &hdr, sizeof(hdr));
 
 	// 发送消息
+	rmi_lock(rmi);
 	r_ret = rmi_send(rmi, pbuf, len+sizeof(struct rmi_header));
 	if (r_ret < 0) {
 		//trace("nonblock_write failed; err: %s\n", get_fd_error_str(ret));
 		goto socket_error;
-	}
-	
+	}	
 
 	// 获取返回值
 	r_ret = rmi_recv(rmi, r_buf, r_len);
@@ -936,6 +936,7 @@ int invoke(struct rmi * rmi, int id, unsigned char * pbuf, int len, unsigned cha
 		//trace("rmi_recv failed; err: %s\n", get_fd_error_str(ret));
 		goto socket_error;
 	}
+	rmi_unlock(rmi);
 
 	if (0 != find_response(&hdr_orig, (struct rmi_header *)(*r_buf))) {
 		trace("recv error\n");
@@ -948,6 +949,7 @@ int invoke(struct rmi * rmi, int id, unsigned char * pbuf, int len, unsigned cha
 	return 0;
 
 socket_error:
+	rmi_unlock(rmi);
 	rmi_disconncet(rmi);
 	
 exit:
@@ -1006,8 +1008,6 @@ void * rmi_listen_thread(void * arg) {
 			continue;
 		}
 		client_rmi->mem_pool_size = rmi->mem_pool_size;
-
-/*		set_fd_nonblock(client_fd);*/
 		
 		client_rmi->fd = client_fd;
 		client_rmi->timeout = rmi->timeout;
