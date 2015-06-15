@@ -2,21 +2,17 @@
 #include <pthread.h>
 
 #include "test.h"
-#include "test_rmi.h"
-#include "find_device.h"
-#include "find_rmi.h"
-#include "socket.h"
+#include "rmi.h"
 
 #define NET_TIMEOUT	100*1000	// unit: 1us
 
 #define MAX_NUM 2
 
-/*struct aaa gs_para1[MAX_NUM];*/
-/*struct bbb gs_para2[MAX_NUM];*/
+struct aaa gs_para1[MAX_NUM];
+struct bbb gs_para2[MAX_NUM];
 
 pthread_mutex_t g_lock[MAX_NUM];
 
-#if 0
 int set_para(struct rmi * rmi, _IN int index, _IN struct aaa * para1) {
 	if (index >= MAX_NUM) {
 		trace("para error\n");
@@ -51,7 +47,7 @@ int get_para(struct rmi * rmi, _IN int index, _OUT struct aaa *para1) {
 	return 0;
 }
 
-int get_para2(struct rmi * rmi, _OUT struct aaa *para1, _OUT struct bbb *para2, _IN int index) {
+int get_para2(struct rmi * rmi, _IN int index, _OUT struct aaa *para1, _OUT struct bbb *para2) {
 	if (index >= MAX_NUM) {
 		trace("para error\n");
 		return 1;
@@ -68,68 +64,6 @@ int get_version(struct rmi * rmi) {
 }
 
 int test1(struct rmi * rmi, int para0, char * ddd) {
-	return 0;
-}
-
-enable: 1
-link: 00000001
-speed: 00010001
-duplex: 00010003
-fc: 00000003
-#endif
-/*int switch_get_port_status(struct rmi * rmi, unsigned int port, SWITCH_PORT_INFO_S * pstPortInfo) {*/
-/*	pstPortInfo->enable = 0x1;*/
-/*	pstPortInfo->link = 0x1;*/
-/*	pstPortInfo->speed = 0x10001;*/
-/*	pstPortInfo->duplex = 0x10003;*/
-/*	pstPortInfo->fc = 0x3;*/
-/**/
-/*	return 0;*/
-/*}*/
-
-#if 0
-void set_test_data(TEST_S * pt) {
-	int i;
-	pt->aaa = 0xaa55;
-	for (i = 0; i < TEST_MACRO; i++) {
-		pt->bbb[i] = i;
-	}
-}
-
-int switch_test_get2(struct rmi * rmi, TEST3_S * ptest) {
-	TEST_S * pt;
-	int i;
-	pt = &ptest->stTest2.stTest2;	
-	set_test_data(pt);
-
-	for (i = 0; i < TEST_MACRO; i++) {
-		pt = &ptest->stTest2.stTest1[i];	
-		set_test_data(pt);
-	}
-
-/*	int i;*/
-/*	char *buf = (char *)ptest;*/
-/*	for (i = 0; i < sizeof(TEST3_S); i++) {*/
-/*		*(buf+i) = i;*/
-/*	}*/
-
-	return 0;
-}
-#endif
-
-int find_device(struct rmi * rmi) {
-	DEV_INFO_S stDevinfo;
-	struct rmi find_rmi;
-
-	stDevinfo.dev_ip = ip_to_net("192.168.1.100");
-
-	RMI_INIT_CLIENT(&find_rmi, find);
-	rmi_set_socket_type(&find_rmi, RMI_SOCKET_UDP);
-	rmi_set_broadcast(&find_rmi);
-	rmi_client_start(&find_rmi, "255.255.255.255", 8888);
-	set_dev_info(&find_rmi, &stDevinfo);
-	rmi_client_close(&find_rmi);
-
 	return 0;
 }
 
@@ -157,9 +91,6 @@ int main(int argc, char * argv[]) {
     sigaction(SIGPIPE, &act, NULL);
 
 	RMI_INIT_SERVER(&server_rmi, test);
-	rmi_set_socket_type(&server_rmi, RMI_SOCKET_UDP);
-	rmi_set_broadcast(&server_rmi);
-	rmi_set_keepalive_time(&server_rmi, 0xffffff);
 	rmi_server_start(&server_rmi, port);
 
 	getchar();

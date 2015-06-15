@@ -1,18 +1,15 @@
 #include <signal.h>
 
 #include "test.h"
-#include "test_rmi.h"
-#include "find_device.h"
-#include "find_rmi.h"
-#include "socket.h"
+#include "rmi.h"
 
 #define MAX_NUM 2
-#define CONNECT_NUM	10
+#define CONNECT_NUM	256
 
 #define WAIT_TIME	(10*1000)
 
-/*struct aaa gs_para1[MAX_NUM];*/
-/*struct bbb gs_para2[MAX_NUM];*/
+struct aaa gs_para1[MAX_NUM];
+struct bbb gs_para2[MAX_NUM];
 
 struct rmi gs_rmi[CONNECT_NUM];
 
@@ -22,12 +19,6 @@ unsigned short server_port;
 int test_cnt = 0;
 int connect_cnt = 0;
 
-int set_dev_info(struct rmi * rmi, DEV_INFO_S * pdev) {
-	printf("dev_ip: %s\n", net_to_ip(pdev->dev_ip));
-
-	return 0;
-}
-
 void * test_proc() {
 	struct rmi client_rmi, * rmi;
 	int i;
@@ -35,9 +26,7 @@ void * test_proc() {
 	int n;
 	
 	rmi = &client_rmi;
-	RMI_INIT_CLIENT(rmi, test);	
-	rmi_set_socket_type(rmi, RMI_SOCKET_UDP);
-	rmi_set_broadcast(rmi);
+	RMI_INIT_CLIENT(rmi, test);
 	rmi_set_timeout(rmi, 500);
 	if (0 != rmi_client_start(rmi, server_ip, server_port)) {
 		trace("rmi_client_start failed\n");
@@ -47,7 +36,6 @@ void * test_proc() {
 	//connect_cnt++;
 /*	return NULL;*/
 	for (n = 0; n < test_times; n++) {
-#if 0
 		gs_para1[0].a = -1;
 		gs_para1[0].b = -2;
 		gs_para1[0].c = 1.2;
@@ -105,7 +93,7 @@ void * test_proc() {
 			struct bbb bbb_buf;
 			memset(&aaa_buf, 0, sizeof(aaa_buf));
 			memset(&bbb_buf, 0, sizeof(bbb_buf));
-			if (0 != get_para2(rmi, &aaa_buf, &bbb_buf, i)) {
+			if (0 != get_para2(rmi, i, &aaa_buf, &bbb_buf)) {
 				trace("get_para failed\n");
 				return NULL;
 			}
@@ -119,17 +107,6 @@ void * test_proc() {
 			}
 			usleep(WAIT_TIME);
 		}
-	#endif
-/*		SWITCH_PORT_INFO_S stPortInfo;*/
-/*		switch_get_port_status(rmi,0,&stPortInfo);*/
-/*		printf("enable: %d\n", stPortInfo.enable);*/
-/*		printf("link: %08x\n", stPortInfo.link);*/
-/*		printf("speed: %08x\n", stPortInfo.speed);*/
-/*		printf("duplex: %08x\n", stPortInfo.duplex);*/
-/*		printf("fc: %08x\n", stPortInfo.fc);*/
-/*		TEST3_S stTest3;*/
-/*		switch_test_get2(rmi, &stTest3);*/
-		find_device(rmi);
 	}
 
 	if (0 != rmi_client_close(rmi)) {
@@ -150,8 +127,6 @@ int main(int argc, char * argv[]) {
 	int cnt;
 	pthread_t pid;
 	struct sigaction act;
-
-	struct rmi find_rmi;
 	
 	if (argc != 3) {
 		printf("usage: %s host port\n", argv[0]);
@@ -165,12 +140,6 @@ int main(int argc, char * argv[]) {
     act.sa_flags = SA_NOMASK;
     sigaction(SIGPIPE, &act, NULL);
 
-	RMI_INIT_SERVER(&find_rmi, find);
-	rmi_set_socket_type(&find_rmi, RMI_SOCKET_UDP);
-	rmi_set_broadcast(&find_rmi);
-	rmi_set_keepalive_time(&find_rmi, 0xffffff);
-	rmi_server_start(&find_rmi, 8888);
-
 	for(i = 0; i < CONNECT_NUM; i++) {
 		int ret = pthread_create(&pid, NULL, test_proc, NULL);
 /*		printf("pthread_create return : %d\n", ret);*/
@@ -178,8 +147,6 @@ int main(int argc, char * argv[]) {
 
 	getchar();
 	printf("successs cnt: %d\n", test_cnt);
-	
-	rmi_server_close(&find_rmi);
 
 	return 0;
 }

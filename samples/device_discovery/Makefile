@@ -7,13 +7,14 @@ ifeq (,$(filter release,$(config)))
 endif
 CFLAG += -W
 
-RMI_DIR := ../librmi_src
+RMI_DIR := ../../librmi_src
+BIN_DIR := ../../bin
+RMI_LIB_DIR := ../../lib
 
-LIB_DIR := -L../lib
-BIN_DIR := -L../bin
-INC_DIRS := -I../librmi_src
+LIB_DIR := -L$(RMI_LIB_DIR)
+INC_DIRS := -I$(RMI_DIR)
 
-LIBS := ../lib/librmi.a -lpthread -lrt
+LIBS := $(RMI_LIB_DIR)/librmi.a -lpthread -lrt
 
 .PHONY: all clean 
 
@@ -21,8 +22,8 @@ all: server client
 	
 rmiparse_middleman : test.h
 	make -C $(RMI_DIR)
-	../bin/rmiparse test.h test
-	../bin/rmiparse find_device.h find
+	$(BIN_DIR)/rmiparse test.h test
+	$(BIN_DIR)/rmiparse find_device.h find
 	#cp ../lib/librmi.so .
 	@touch rmiparse_middleman
 
@@ -34,5 +35,7 @@ client: rmiparse_middleman client.c
 	
 clean:
 	-rm -f server client *.so *.a
-	-rm test_stub.c test_proxier.c rmiparse_middleman
+	-rm rmiparse_middleman
+	-rm test_stub.c test_proxier.c test_rmi.h
+	-rm find_stub.c find_proxier.c find_rmi.h
 	make -C $(RMI_DIR) clean
