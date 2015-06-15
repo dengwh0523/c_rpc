@@ -27,7 +27,7 @@ void * test_proc() {
 	
 	rmi = &client_rmi;
 	RMI_INIT_CLIENT(rmi, test);
-	rmi_set_timeout(rmi, 500);
+/*	rmi_set_timeout(rmi, 500);*/
 	if (0 != rmi_client_start(rmi, server_ip, server_port)) {
 		trace("rmi_client_start failed\n");
 		return NULL;
@@ -54,7 +54,7 @@ void * test_proc() {
 		gs_para1[1].b = 3;
 		gs_para2[1].stAaa = gs_para1[1];
 		for (i = 0; i < 10; i++) {
-			gs_para2[1].a[i] = 0 - i*2;
+			gs_para2[1].a[i] = 0 - i;
 		}
 		for (i = 0; i < 20; i++) {
 			gs_para2[1].a_array[i] = gs_para2[1].stAaa;

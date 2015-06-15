@@ -6,8 +6,8 @@
 #define TEST_MACRO	100
 
 struct aaa {
-	unsigned int a MARK(0, 0);
-	unsigned char b MARK(1, 0);
+	int a MARK(0, 0);
+	char b MARK(1, 0);
 	float c MARK(2, 0);
 	double d MARK(3, 0);
 	long double e MARK(4, 0);
