@@ -1172,6 +1172,9 @@ failed:
 		free(rmi->user_data);
 		rmi->user_data = NULL;
 	}
+
+	rmi_finit(rmi);
+	
 	return -1;
 }
 
@@ -1244,6 +1247,9 @@ failed:
 		mem_destroy_pool(rmi->mem_pool);
 		rmi->mem_pool = NULL;
 	}
+
+	rmi_finit(rmi);
+	
 	return -1;
 }
 
