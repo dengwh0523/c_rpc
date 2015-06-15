@@ -283,6 +283,7 @@ int thread_run(void * (*f)(void*), void *data)
 thread_pool *tpool_create(int threads)
 {
 	thread_pool *tp = (thread_pool*)calloc(1, sizeof(struct thread_pool_));
+	int i;
 
 	if (threads > MAX_THREADS)
 		threads = MAX_THREADS;
@@ -294,6 +295,15 @@ thread_pool *tpool_create(int threads)
 		if (!t) break;
 		tp->threads[tp->cnt++] = t;
 		thread_start(t);
+	}
+
+	// wait thread to start
+	for (i = 0; i < tp->cnt;) {
+		if (tp->threads[i]->busy) {
+			msleep(1);
+			continue;
+		}
+		++i;
 	}
 
 	return tp;
