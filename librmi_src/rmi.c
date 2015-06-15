@@ -737,6 +737,7 @@ int udp_connect(struct rmi * rmi, char * host, unsigned short port) {
 	}
 
 	if (0 != read_fd_timeout(fd, NULL, 0, rmi->timeout)) {
+		trace("recv timeout\n");
 		goto failed;
 	}
 	
@@ -750,7 +751,7 @@ int udp_connect(struct rmi * rmi, char * host, unsigned short port) {
 	if (0 != find_response(&hdr_orig, &r_hdr)) {
 		trace("recv error\n");
 		goto failed;
-	}	
+	}
 	
 /*	if (0 != rmi->peer_ip[0]) {*/
 /*		memcpy(dst_ip, rmi->peer_ip, strlen(rmi->peer_ip));*/
@@ -1157,7 +1158,7 @@ int rmi_server_start(struct rmi * rmi, unsigned short port) {
 	rmi->thread_start = 1;
 /*	pthread_create(&rmi->pid, NULL, rmi_listen_thread, (void *)rmi);*/
 	rmi->thread_pool = tpool_create(1);
-	msleep(1);
+// 	msleep(1);
 	tpool_start(rmi->thread_pool, rmi_listen_thread, (void *)rmi);
 
 	return 0;

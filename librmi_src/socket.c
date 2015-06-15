@@ -171,13 +171,11 @@ int create_tcp_server_socket(unsigned short port) {
 		trace("socket error\n");
 		return -1;
 	}
-	{
-		int reuse = 1;	
-		if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR,(char*)&reuse, sizeof(int)) != 0) {		
-			trace("setsocketopt error\n");
-			ret = -1;
-			goto exit;
-		}
+
+	if (set_fd_reuse(fd) != 0) {	
+		trace("set_fd_reuse error\n");
+		ret = -1;
+		goto exit;
 	}
 	
 	bind_addr.sin_family = AF_INET;
