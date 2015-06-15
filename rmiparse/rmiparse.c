@@ -593,7 +593,6 @@ int output_func_definition(FILE * fp, LIST_S * func_list) {
 		output(fp, buf);
 		output(fp, "(struct rmi* rmi, struct func_entry * func, const unsigned char * pbuf, const int len, unsigned char ** ret_buf, int * ret_len) {\n");
 
-		output(fp, "\tint i;\n");
 		output(fp, "\tint parse_len = 0;\n");
 		output(fp, "\tunsigned char *buf;\n\n");
 		output(fp, "\t// 参数列表\n");
