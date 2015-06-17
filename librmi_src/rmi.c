@@ -346,16 +346,12 @@ int serialize(struct rmi * rmi, const unsigned char * pdata, unsigned char * pbu
 
 			// set value
 			if (entry[i].type_name) {
-				unsigned char * buf;
+				unsigned char * buf = pbuf+len;			
 				int str_len;
-				buf = malloc(entry[i].type_len*2);
-				if (NULL == buf) {
-					trace("malloc error\n");
-					return -1;
-				}
-				str_len = serialize(rmi, base, buf, &entry[i]);
-				len += set_len(buf, str_len, pbuf+len);
-				free(buf);
+				
+				str_len = serialize(rmi, base, buf+4, &entry[i]);
+				*(int *)buf = htonl(str_len);
+				len += str_len+4;
 			} else {
 				switch(entry[i].field_type) {
 					case RMI_FIELD_VAR :
@@ -453,7 +449,8 @@ int deserialize(struct rmi * rmi, unsigned char * pdata, const unsigned char * p
 				if (base) {						
 					if (entry[i].type_name) {
 						int str_len;
-						len += get_varint((unsigned char *)&str_len, sizeof(str_len), pbuf+len);
+						str_len = ntohl(*(int *)(pbuf+len));
+						len += 4;
 						len += deserialize(rmi, base, pbuf+len, str_len, &entry[i]);
 					} else {
 						memset(base, 0, entry[i].type_len);
@@ -923,7 +920,6 @@ int invoke(struct rmi * rmi, int id, unsigned char * pbuf, int len, unsigned cha
 	memcpy(pbuf, &hdr, sizeof(hdr));
 
 	// ·¢ËÍÏûÏ¢
-	rmi_lock(rmi);
 	r_ret = rmi_send(rmi, pbuf, len+sizeof(struct rmi_header));
 	if (r_ret < 0) {
 		//trace("nonblock_write failed; err: %s\n", get_fd_error_str(ret));
@@ -936,7 +932,6 @@ int invoke(struct rmi * rmi, int id, unsigned char * pbuf, int len, unsigned cha
 		//trace("rmi_recv failed; err: %s\n", get_fd_error_str(ret));
 		goto socket_error;
 	}
-	rmi_unlock(rmi);
 
 	if (0 != find_response(&hdr_orig, (struct rmi_header *)(*r_buf))) {
 		trace("recv error\n");
@@ -949,7 +944,6 @@ int invoke(struct rmi * rmi, int id, unsigned char * pbuf, int len, unsigned cha
 	return 0;
 
 socket_error:
-	rmi_unlock(rmi);
 	rmi_disconncet(rmi);
 	
 exit:

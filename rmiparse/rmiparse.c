@@ -779,7 +779,9 @@ int output_proxier_func(FILE * fp, LIST_S * func_list) {
 		}
 
 		output(fp, "\n\t// Ô¶³Ìµ÷ÓÃ\n");
-		output(fp, "\tif (0 != invoke(rmi, func_id, buf, len, &pdata, &len)) {\n");
+		output(fp, "\trmi_lock(rmi);\n");
+		output(fp, "\tif (0 != invoke(rmi, func_id, buf, len, &pdata, &len)) {\n");		
+		output(fp, "\t	rmi_unlock(rmi);\n");
 		output(fp, "\t	trace(\"invoke failed\\n\");\n");
 		output(fp, "\t	return -1;\n");
 		output(fp, "\t}\n");
@@ -801,7 +803,8 @@ int output_proxier_func(FILE * fp, LIST_S * func_list) {
 			output(fp, buf);
 			output(fp, "]);\n");
 		}
-/*		output(fp, "\n\tfree(pdata);\n\n");*/
+/*		output(fp, "\n\tfree(pdata);\n\n");*/	
+		output(fp, "\trmi_unlock(rmi);\n");
 		output(fp, "\n");
 	
 		output(fp, "\tif (len != parse_len) {\n");
