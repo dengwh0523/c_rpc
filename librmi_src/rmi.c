@@ -344,32 +344,33 @@ int serialize(struct rmi * rmi, const unsigned char * pdata, unsigned char * pbu
 			// set key
 			len += set_varint((unsigned char *)&key, sizeof(key), pbuf+len);
 
-			// set value
-			if (entry[i].type_name) {
+			// set value			
+			switch(entry[i].field_type) {
+			case RMI_FIELD_VAR :
+				len += set_varint(base, entry[i].type_len, pbuf+len);
+				break;
+			case RMI_FIELD_FIX :
+				len += set_len(base, entry[i].type_len, pbuf+len);
+				break;
+			case RMI_FIELD_LEN:
+				len += set_len(base, strlen(base), pbuf+len);
+				break;
+			case RMI_FIELD_SIGNED:
+				len += set_varint_signed(base, entry[i].type_len, pbuf+len);
+				break;
+			case RMI_FIELD_STRUCT :
+			{
 				unsigned char * buf = pbuf+len;			
 				int str_len;
 				
 				str_len = serialize(rmi, base, buf+4, &entry[i]);
 				*(int *)buf = htonl(str_len);
 				len += str_len+4;
-			} else {
-				switch(entry[i].field_type) {
-					case RMI_FIELD_VAR :
-						len += set_varint(base, entry[i].type_len, pbuf+len);
-						break;
-					case RMI_FIELD_FIX :
-						len += set_len(base, entry[i].type_len, pbuf+len);
-						break;
-					case RMI_FIELD_LEN:
-						len += set_len(base, strlen(base), pbuf+len);
-						break;
-					case RMI_FIELD_SIGNED:
-						len += set_varint_signed(base, entry[i].type_len, pbuf+len);
-						break;
-					default :
-						trace("field type[%d] is not support now\n", entry[i].field_type);
-						return -1;
-				}
+				break;
+			}
+			default :
+				trace("field type[%d] is not support now\n", entry[i].field_type);
+				return -1;
 			}
 			base += entry[i].type_len;
 		}
@@ -438,34 +439,38 @@ int deserialize(struct rmi * rmi, unsigned char * pdata, const unsigned char * p
 
 		// get value
 		switch(field_type) {
-			case RMI_FIELD_VAR :
-				len += get_varint(base, entry[i].type_len, pbuf+len);
-				break;
-			case RMI_FIELD_FIX :
-				if (base) memset(base, 0, entry[i].type_len);
-				len += get_len(base, entry[i].type_len, pbuf+len);
-				break;
-			case RMI_FIELD_LEN:
-				if (base) {						
-					if (entry[i].type_name) {
-						int str_len;
-						str_len = ntohl(*(int *)(pbuf+len));
-						len += 4;
-						len += deserialize(rmi, base, pbuf+len, str_len, &entry[i]);
-					} else {
-						memset(base, 0, entry[i].type_len);
-						len += get_len(base, entry[i].type_len-1, pbuf+len);
-					}
-				} else {
-					len += get_len(base, entry[i].type_len-1, pbuf+len);
-				}
-				break;
-			case RMI_FIELD_SIGNED:
-				len += get_varint_signed(base, entry[i].type_len, pbuf+len);
-				break;
-			default :
-				trace("field type[%d] is not support now\n", entry[i].field_type);
-				return -1;
+		case RMI_FIELD_VAR :
+			len += get_varint(base, entry[i].type_len, pbuf+len);
+			break;
+		case RMI_FIELD_FIX :
+			if (base) memset(base, 0, entry[i].type_len);
+			len += get_len(base, entry[i].type_len, pbuf+len);
+			break;
+		case RMI_FIELD_LEN:
+			if (base) {
+				memset(base, 0, entry[i].type_len);
+				len += get_len(base, entry[i].type_len-1, pbuf+len);
+			} else {
+				len += get_len(base, entry[i].type_len-1, pbuf+len);
+			}
+			break;
+		case RMI_FIELD_SIGNED:
+			len += get_varint_signed(base, entry[i].type_len, pbuf+len);
+			break;
+		case RMI_FIELD_STRUCT :
+		{
+			int str_len;
+			str_len = ntohl(*(int *)(pbuf+len));
+			len += 4;
+			if (base) {
+				deserialize(rmi, base, pbuf+len, str_len, &entry[i]);
+			}
+			len += str_len;
+			break;
+		}
+		default :
+			trace("field type[%d] is not support now\n", entry[i].field_type);
+			return -1;
 		}
 		left_bytes = enc_len - len;
 	}

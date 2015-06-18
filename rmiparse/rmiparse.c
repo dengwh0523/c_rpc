@@ -6,6 +6,7 @@
 #define RMI_FIELD_FIX			1
 #define RMI_FIELD_LEN			2
 #define RMI_FIELD_SIGNED		3
+#define RMI_FIELD_STRUCT		4
 
 #define DEFAULT_STUB_H	"stub.h"
 #define DEFAULT_STUB_C	"stub.c"
@@ -45,6 +46,7 @@ struct field_type_s filed_type_map[] = {
 	MAKE_FIELD_TYPE(RMI_FIELD_FIX),
 	MAKE_FIELD_TYPE(RMI_FIELD_LEN),
 	MAKE_FIELD_TYPE(RMI_FIELD_SIGNED),
+	MAKE_FIELD_TYPE(RMI_FIELD_STRUCT),
 };
 
 int is_struct_type(char * type);
@@ -975,7 +977,7 @@ int gen_field_type(struct parameter * para) {
 
 	// struct
 	if (is_struct_type(para->type)) {	
-		return RMI_FIELD_LEN;
+		return RMI_FIELD_STRUCT;
 	}
 
 	// float

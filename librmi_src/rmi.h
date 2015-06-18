@@ -72,6 +72,7 @@ do{\
 #define RMI_FIELD_FIX			1
 #define RMI_FIELD_LEN			2
 #define RMI_FIELD_SIGNED		3
+#define RMI_FIELD_STRUCT		4
 
 #define RMI_MAX_CONNECT			256
 #define RMI_DEFAULT_TIMEOUT		1000	//unit: 1ms
