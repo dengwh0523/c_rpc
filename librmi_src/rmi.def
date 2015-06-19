@@ -11,6 +11,8 @@ EXPORTS
 	rmi_set_broadcast
 	rmi_set_noack
 	rmi_set_keepalive_time
+	rmi_set_user_data
+	rmi_get_user_data
 	rmi_server_start
 	rmi_server_close
 	rmi_client_start

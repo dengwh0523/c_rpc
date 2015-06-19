@@ -82,7 +82,17 @@ int rmi_set_socket_type(struct rmi * rmi, int socket_type) {
 
 int rmi_set_broadcast(struct rmi * rmi) {
 	rmi->broadcast = 1;
+	rmi->socket_type = RMI_SOCKET_UDP;
 	return 0;
+}
+
+int rmi_set_user_data(struct rmi * rmi, void * ptr) {
+	rmi->user_data = ptr;
+	return 0;
+}
+
+void * rmi_get_user_data(struct rmi * rmi) {
+	return rmi->user_data;
 }
 
 int rmi_set_noack(struct rmi * rmi) {
@@ -1125,10 +1135,10 @@ void * rmi_server_thread(void * arg) {
 		mem_destroy_pool(rmi->mem_pool);
 		rmi->mem_pool = NULL;
 	}
-	if (rmi->user_data) {
-		free(rmi->user_data);
-		rmi->user_data = NULL;
-	}
+/*	if (rmi->user_data) {*/
+/*		free(rmi->user_data);*/
+/*		rmi->user_data = NULL;*/
+/*	}*/
 /*	printf("!!!! connect num2: %d !!!!!!!!!!\n", pool_size(server_rmi->user_data));*/
 
 	free(rmi);
@@ -1237,10 +1247,10 @@ failed:
 		close_fd(rmi->fd);
 	}
 	
-	if (rmi->user_data) {
-		free(rmi->user_data);
-		rmi->user_data = NULL;
-	}
+/*	if (rmi->user_data) {*/
+/*		free(rmi->user_data);*/
+/*		rmi->user_data = NULL;*/
+/*	}*/
 
 	if (rmi->mem_pool) {
 		mem_destroy_pool(rmi->mem_pool);
@@ -1255,10 +1265,10 @@ failed:
 int rmi_client_close(struct rmi * rmi) {
 	rmi_disconncet(rmi);
 	
-	if (rmi->user_data) {
-		free(rmi->user_data);
-		rmi->user_data = NULL;
-	}
+/*	if (rmi->user_data) {*/
+/*		free(rmi->user_data);*/
+/*		rmi->user_data = NULL;*/
+/*	}*/
 
 	if (rmi->mem_pool) {
 		mem_destroy_pool(rmi->mem_pool);

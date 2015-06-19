@@ -185,6 +185,8 @@ int rmi_set_socket_type(struct rmi * rmi, int socket_type);
 int rmi_set_broadcast(struct rmi * rmi);
 int rmi_set_noack(struct rmi * rmi);
 int rmi_set_keepalive_time(struct rmi * rmi, int time);
+int rmi_set_user_data(struct rmi * rmi, void * ptr);
+void * rmi_get_user_data(struct rmi * rmi);
 
 void rmi_lock(struct rmi * rmi);
 void rmi_unlock(struct rmi * rmi);
