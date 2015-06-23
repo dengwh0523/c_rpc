@@ -521,7 +521,6 @@ int find_response(struct rmi_header * hdr, struct rmi_header * r_hdr)
 
 	if (RMI_RESPONSE == r_hdr->mtype) {
 		if ((hdr->seq == r_hdr->seq) && (0 == r_hdr->stat) 
-/*			&&(hdr->objid == r_hdr->objid) && (hdr->itfid == r_hdr->itfid) */
 			&& (hdr->funcid == r_hdr->funcid))
 			return 0;
 	}
@@ -532,7 +531,7 @@ int find_response(struct rmi_header * hdr, struct rmi_header * r_hdr)
 void gen_header(struct rmi_header * hdr, int id, int len, int seq) {
 	hdr->magic = RMI_MAGIC;
 	hdr->ver = 1;
-	hdr->mtype = RMI_TWO_WAY_REQ;
+	hdr->mtype = RMI_REQ2;
 	hdr->seq = seq;
 	hdr->funcid = id;
 	hdr->plen = len;

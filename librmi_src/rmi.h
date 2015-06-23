@@ -60,12 +60,12 @@ do{\
 #endif
 #endif
 
-#define RMI_ONE_WAY_REQ			1
-#define RMI_TWO_WAY_REQ			2
+#define RMI_REQ1				1
+#define RMI_REQ2				2
 #define RMI_RESPONSE			3
 #define RMI_NOTIFY				4
 #define RMI_CLOSE				5
-#define RMI_MTYPE_MIN			RMI_ONE_WAY_REQ
+#define RMI_MTYPE_MIN			RMI_REQ1
 #define RMI_MTYPE_MAX			RMI_CLOSE
 
 #define RMI_FIELD_VAR			0
@@ -89,12 +89,8 @@ struct rmi_header {
 	unsigned int seq;		// unique sequence number
 	unsigned char ver;		// rmi version, now 1
 	unsigned char opt;		// option, now 0
-	unsigned char mtype;	// 1-4
+	unsigned char mtype;	// 1-5
 	unsigned char stat;		// 0-success, 1-no such object, 2-no such interface, 3-no such method
-	unsigned char caof;		// now 0
-	unsigned char rsv[7];	// must 0
-	unsigned char objid[16];
-	unsigned char itfid[16];
 	unsigned int funcid;
 	unsigned int crc;
 };
