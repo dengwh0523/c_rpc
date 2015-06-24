@@ -8,6 +8,10 @@
 #include<stdlib.h>
 #include<stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * 预定义一些常用类型
  */
@@ -84,6 +88,11 @@ void mem_reset_pool(mem_pool *pool);
 
 void *mem_palloc(mem_pool *pool, size_t size);
 void *mem_pnalloc(mem_pool *pool, size_t size);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif /* _MEM_PALLOC_H_INCLUDED_ */

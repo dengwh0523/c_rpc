@@ -1,15 +1,7 @@
 #ifndef THREAD_H
 #define THREAD_H
 
-#include <stdint.h>
-
-#ifdef _WIN32
-#include <windows.h>
-#include <process.h>
-#else
-#include <unistd.h>
-#include <pthread.h>
-#endif
+/*#include <stdint.h>*/
 
 #ifdef _WIN32
 #define msleep Sleep
@@ -34,8 +26,8 @@ extern int atomic_dec(int *v);			// return post-value
 
 extern int atomic_dec_and_zero(int *v, int *v2);
 
-extern int64_t atomic_add64(int64_t *v, int n);		// return pre-value
-extern uint64_t atomic_addu64(uint64_t *v, int n);	// return pre-value
+/*extern int64_t atomic_add64(int64_t *v, int n);		// return pre-value*/
+/*extern uint64_t atomic_addu64(uint64_t *v, int n);	// return pre-value*/
 
 // Run a supplied function as a one-off detached thread. The
 // thread will be destroyed after this single use.
