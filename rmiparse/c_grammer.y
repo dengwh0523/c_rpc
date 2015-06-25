@@ -16,12 +16,12 @@ do{\
     printf("%s%s", __buf1, __buf2);\
 } while(0)
 
-static char g_type[128]; // ç”¨æ¥å­˜å‚¨å½“å‰æ­£è§£æåˆ°çš„å‡½æ•°è¿”å›ç±»å‹æˆ–å‚æ•°ç±»å‹
-static char g_name[128]; // ç”¨æ¥å­˜å‚¨å½“å‰æ­£è§£æåˆ°çš„å‡½æ•°åå­—æˆ–å‚æ•°åå­—
-static int array_len;	// æ•°ç»„é•¿åº¦
-static struct parameter s_para; // ç”¨æ¥å­˜å‚¨å½“å‰æ­£è§£æåˆ°çš„å‚æ•°ä¿¡æ¯
-static struct struct_info s_struct; // ç”¨æ¥å­˜å‚¨å½“å‰æ­£è§£æåˆ°çš„ç»“æ„ä½“ä¿¡æ¯
-static struct func_info s_func; // ç”¨æ¥å­˜å‚¨å½“å‰æ­£è§£æåˆ°çš„å‡½æ•°ä¿¡æ¯
+static char g_type[128]; // ÓÃÀ´´æ´¢µ±Ç°Õı½âÎöµ½µÄº¯Êı·µ»ØÀàĞÍ»ò²ÎÊıÀàĞÍ
+static char g_name[128]; // ÓÃÀ´´æ´¢µ±Ç°Õı½âÎöµ½µÄº¯ÊıÃû×Ö»ò²ÎÊıÃû×Ö
+static int array_len;	// Êı×é³¤¶È
+static struct parameter s_para; // ÓÃÀ´´æ´¢µ±Ç°Õı½âÎöµ½µÄ²ÎÊıĞÅÏ¢
+static struct struct_info s_struct; // ÓÃÀ´´æ´¢µ±Ç°Õı½âÎöµ½µÄ½á¹¹ÌåĞÅÏ¢
+static struct func_info s_func; // ÓÃÀ´´æ´¢µ±Ç°Õı½âÎöµ½µÄº¯ÊıĞÅÏ¢
 static struct newtype_info s_newtype;
 
 int is_func = 0;
