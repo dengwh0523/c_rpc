@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rmiparse", "rmiparse.vcproj", "{3114054F-9DA3-4FDB-A62B-A583A16DB8C1}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "librmi", "librmi.vcproj", "{D85F5704-01BF-45D4-89B8-852452F936E7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3114054F-9DA3-4FDB-A62B-A583A16DB8C1}.Debug|Win32.ActiveCfg = Debug|Win32
+		{3114054F-9DA3-4FDB-A62B-A583A16DB8C1}.Debug|Win32.Build.0 = Debug|Win32
+		{3114054F-9DA3-4FDB-A62B-A583A16DB8C1}.Release|Win32.ActiveCfg = Release|Win32
+		{3114054F-9DA3-4FDB-A62B-A583A16DB8C1}.Release|Win32.Build.0 = Release|Win32
+		{D85F5704-01BF-45D4-89B8-852452F936E7}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D85F5704-01BF-45D4-89B8-852452F936E7}.Debug|Win32.Build.0 = Debug|Win32
+		{D85F5704-01BF-45D4-89B8-852452F936E7}.Release|Win32.ActiveCfg = Release|Win32
+		{D85F5704-01BF-45D4-89B8-852452F936E7}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

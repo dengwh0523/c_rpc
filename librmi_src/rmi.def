@@ -1,4 +1,4 @@
-LIBRARY	"rmi"
+LIBRARY	"librmi"
 EXPORTS
 	rmi_init
 	rmi_finit
