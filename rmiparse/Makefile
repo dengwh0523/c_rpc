@@ -35,4 +35,4 @@ bison_middleman: c_grammer.y
 clean:
 	-rm $(OBJS)
 	-rm -f $(OUT_DIR)/rmiparse 
-	-rm -f lex_middleman bison_middleman c_grammer.yy.c c_grammer.tab.c c_grammer.tab.h 
+	-rm -f lex_middleman bison_middleman 
