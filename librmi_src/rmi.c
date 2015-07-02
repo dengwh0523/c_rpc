@@ -559,6 +559,42 @@ static int response(struct rmi * rmi, struct rmi_header * hdr, int error_code) {
 	return 0;
 }
 
+int rmi_broadcast_recv(struct rmi * rmi, unsigned char ** r_buf, int * r_len) {
+	int ret = 0;
+	struct rmi_header *phdr;
+	int len;
+	unsigned char * pdata = NULL;
+	
+	ret = read_fd_timeout(rmi->fd, NULL, 0, rmi->timeout);
+	if (ret < 0) {
+		//trace("nonblock_read failed; err: %s\n", get_fd_error_str(ret));
+		return -1;
+	}
+	len = 2048;
+	pdata = mem_palloc(rmi->mem_pool, len);
+	if (NULL == pdata) {
+		trace("malloc error\n");
+		return -1;
+	}
+	len = udp_recv(rmi->fd, pdata, len, NULL, &rmi->peer_port);
+
+	phdr = (struct rmi_header *)pdata;
+			
+	deserialize_rmi_header(phdr);
+	if (0 != verify_header(phdr)) {
+		trace("verify_header failed\n");
+		return -1;
+	}
+	if (phdr->plen != (len - sizeof(struct rmi_header))) {
+		trace("broadcast recv error\n");
+		return -1;
+	}
+	*r_buf = pdata;
+	*r_len = phdr->plen;
+
+	return 0;
+}
+
 int rmi_recv(struct rmi * rmi, unsigned char ** r_buf, int * r_len) {
 	int ret = 0;
 	struct rmi_header hdr;
@@ -567,11 +603,16 @@ int rmi_recv(struct rmi * rmi, unsigned char ** r_buf, int * r_len) {
 	
 	do {
 		mem_reset_pool(rmi->mem_pool);
+		if (rmi->broadcast) {
+			return rmi_broadcast_recv(rmi, r_buf, r_len);
+		}
+		
 		ret = nonblock_read(rmi->fd, (unsigned char *)&hdr, sizeof(hdr), rmi->timeout);
 		if (ret < 0) {
 			//trace("nonblock_read failed; err: %s\n", get_fd_error_str(ret));
 			break;
 		}
+			
 		deserialize_rmi_header(&hdr);
 		if (0 != verify_header(&hdr)) {
 			trace("verify_header failed\n");
@@ -613,18 +654,21 @@ int rmi_recv(struct rmi * rmi, unsigned char ** r_buf, int * r_len) {
 
 int rmi_send(struct rmi * rmi, unsigned char * pbuf, int len) {
 	int ret = 0;
-	if (RMI_SOCKET_TCP == rmi->socket_type) {
+	
+	if (rmi->broadcast) {
+		if (len > 1450) {
+			trace("packet is too much for broadcast\n");
+			return -1;
+		}
+		udp_send(rmi->fd, pbuf, len, BROADCAST_ADDR, rmi->peer_port);
+	} else if (RMI_SOCKET_TCP == rmi->socket_type) {
 		ret = nonblock_write(rmi->fd, pbuf, len, rmi->timeout);
 		if (ret < 0) {
 			//trace("nonblock_write failed; err: %s\n", get_fd_error_str(ret));
 			return ret;
 		}		
  	} else {
- 		if (rmi->broadcast) {
-			ret = udp_send(rmi->fd, pbuf, sizeof(struct rmi_header), BROADCAST_ADDR, rmi->peer_port);
- 		} else {
-			ret = nonblock_write(rmi->fd, pbuf, sizeof(struct rmi_header), rmi->timeout);
- 		}
+		ret = nonblock_write(rmi->fd, pbuf, sizeof(struct rmi_header), rmi->timeout);
 		if (ret < 0) {
 			//trace("nonblock_write failed; err: %s\n", get_fd_error_str(ret));
 			return ret;
@@ -638,11 +682,8 @@ int rmi_send(struct rmi * rmi, unsigned char * pbuf, int len) {
 			} else {
 				wr_len = len;
 			} 		
-			if (rmi->broadcast) {
-				ret = udp_send(rmi->fd, pbuf, wr_len, BROADCAST_ADDR, rmi->peer_port);
-			} else {
-				ret = nonblock_write(rmi->fd, pbuf, wr_len, rmi->timeout);
-			}
+			
+			ret = nonblock_write(rmi->fd, pbuf, wr_len, rmi->timeout);
 			if (ret < 0) {
 				//trace("nonblock_write failed; err: %s\n", get_fd_error_str(ret));
 				return ret;
@@ -738,6 +779,11 @@ int udp_connect(struct rmi * rmi, char * host, unsigned short port) {
 		return -1;
 	}
 
+	if (rmi->broadcast) {
+		rmi->peer_port = port;
+		goto set_buf;
+	}
+
 	// sync to server
 	gen_header(&hdr, 0, 0, 0);
 	hdr_orig = hdr;
@@ -795,6 +841,8 @@ int udp_connect(struct rmi * rmi, char * host, unsigned short port) {
 			goto failed;
 		}
 	}
+
+set_buf: 
 	rmi->fd = fd;	
 
 	set_fd_sendbuf(fd, rmi->send_buf_size);
@@ -891,6 +939,10 @@ failed:
 
 int rmi_disconncet(struct rmi * rmi) {
 	struct rmi_header hdr;
+
+	if (rmi->broadcast) {
+		goto exit;
+	}
 	
 	switch(rmi->socket_type) {
 	case RMI_SOCKET_UDP : 
@@ -909,7 +961,8 @@ int rmi_disconncet(struct rmi * rmi) {
 		trace("socket type[%d] not support now!\n", rmi->socket_type);
 		return -1;
 	}
-	
+
+exit:	
 	if (rmi->fd > 0) {
 		close_fd(rmi->fd);
 		rmi->fd = -1;
@@ -957,6 +1010,12 @@ int invoke(struct rmi * rmi, int id, unsigned char * pbuf, int len, unsigned cha
 	if (r_ret < 0) {
 		//trace("rmi_recv failed; err: %s\n", get_fd_error_str(ret));
 		goto socket_error;
+	}
+
+	// broadcast that need ack, make sure clear recv buf
+	if (rmi->broadcast) {
+		unsigned char data;
+		while (read_fd_timeout(rmi->fd, &data, sizeof(data), 0) > 0);
 	}
 
 	if (0 != find_response(&hdr_orig, (struct rmi_header *)(*r_buf))) {
@@ -1161,6 +1220,102 @@ void * rmi_server_thread(void * arg) {
 	return NULL;
 }
 
+void * rmi_broadcast_thread(void * arg) {
+	struct rmi * rmi = (struct rmi *)arg;
+	int ret = 0;
+	struct rmi_header * p_hdr;
+	unsigned char * pdata;
+	unsigned char * pbuf;
+	int len;
+	struct func_entry * func_entry;
+	
+/*	pthread_detach(pthread_self());*/
+
+	rmi->user_data = NULL;
+
+	rmi->mem_pool = mem_create_pool(rmi->mem_pool_size);
+	if (NULL == rmi->mem_pool) {
+		trace("mem_create_pool failed\n");
+		goto exit;
+	}
+	rmi->mem_pool_size = rmi->mem_pool_size;
+
+	while(rmi->thread_start) {
+		int error_code = 0;
+		
+		if (0 != read_fd_timeout(rmi->fd, NULL, 0, rmi->timeout)) {
+			continue;
+		}
+
+		ret = rmi_recv(rmi, &pdata, &len);	
+		if (ret < 0) {
+			//trace("rmi_recv failed; err: %s\n", get_fd_error_str(ret));
+			break;
+		}
+
+		p_hdr = (struct rmi_header *)pdata;
+		pdata += sizeof(struct rmi_header);
+
+		do {			
+			if ((func_entry = get_func_entry(rmi, p_hdr->funcid)) == NULL) {
+				trace("req interface is not support now!\n");
+				len = 0;
+				error_code = 2;
+				pbuf = (unsigned char *)p_hdr;
+				break;
+			}	
+
+			if (0 != func_entry->invoke_func(rmi, func_entry, pdata, p_hdr->plen, &pbuf, &len)) {
+				trace("func[%d] failed!\n", p_hdr->funcid);
+				len = 0;
+				error_code = 3;
+				pbuf = (unsigned char *)p_hdr;
+				break;
+			}
+		} while(0);
+
+		// multicast do not ack default
+		if (rmi->broadcast) {
+			if (!rmi->ack) {
+				continue;
+			} else {
+				rmi->ack = 0;
+			}
+		}
+
+		p_hdr->plen = len;
+		response(rmi, p_hdr, error_code);
+		if (0 == error_code) {
+			memcpy(pbuf, p_hdr, sizeof(struct rmi_header));
+		}
+		
+		ret = rmi_send(rmi, pbuf, len+sizeof(struct rmi_header));
+		if (ret < 0) {
+			//trace("nonblock_write failed; err: %s\n", get_fd_error_str(ret));
+			break;
+		}
+	}
+
+exit:
+	rmi->thread_start = 0;
+
+	if (rmi->fd > 0) {
+		close_fd(rmi->fd);
+		rmi->fd = -1;
+	}
+	if (rmi->mem_pool) {
+		mem_destroy_pool(rmi->mem_pool);
+		rmi->mem_pool = NULL;
+	}
+/*	if (rmi->user_data) {*/
+/*		free(rmi->user_data);*/
+/*		rmi->user_data = NULL;*/
+/*	}*/
+/*	printf("!!!! connect num2: %d !!!!!!!!!!\n", pool_size(server_rmi->user_data));*/
+
+	return NULL;
+}
+
 int rmi_server_start(struct rmi * rmi, unsigned short port) {
 	rmi_set_default_para(rmi);
 
@@ -1169,21 +1324,27 @@ int rmi_server_start(struct rmi * rmi, unsigned short port) {
 		goto failed;
 	}
 
-	rmi->user_data = malloc(sizeof(POOL_S));
-	if (NULL == rmi->user_data) {
-		trace("malloc failed\n");
-		goto failed;
-	}
-	if (0 != pool_init(rmi->user_data, rmi->max_connect_num, sizeof(struct rmi *))) {
-		trace("pool_init failed\n");
-		goto failed;
+	if (!rmi->broadcast) {
+		rmi->user_data = malloc(sizeof(POOL_S));
+		if (NULL == rmi->user_data) {
+			trace("malloc failed\n");
+			goto failed;
+		}
+		if (0 != pool_init(rmi->user_data, rmi->max_connect_num, sizeof(struct rmi *))) {
+			trace("pool_init failed\n");
+			goto failed;
+		}
 	}
 
 	rmi->thread_start = 1;
 /*	pthread_create(&rmi->pid, NULL, rmi_listen_thread, (void *)rmi);*/
 	rmi->thread_pool = tpool_create(1);
 // 	msleep(1);
-	tpool_start(rmi->thread_pool, rmi_listen_thread, (void *)rmi);
+	if (!rmi->broadcast) {
+		tpool_start(rmi->thread_pool, rmi_listen_thread, (void *)rmi);
+	} else {
+		tpool_start(rmi->thread_pool, rmi_broadcast_thread, (void *)rmi);
+	}
 
 	return 0;
 
@@ -1218,11 +1379,13 @@ int rmi_server_close(struct rmi * rmi) {
 	tpool_destroy(rmi->thread_pool);
 	rmi->thread_pool = NULL;
 
-	pool_operate_it(rmi->user_data, rmi_operate_close);
+	if (!rmi->broadcast) {
+		pool_operate_it(rmi->user_data, rmi_operate_close);
 
-	while(pool_size(rmi->user_data)) {
-		msleep(0);
-	}	
+		while(pool_size(rmi->user_data)) {
+			msleep(0);
+		}
+	}
 
 	if (rmi->user_data) {
 		pool_finit(rmi->user_data);
