@@ -100,6 +100,11 @@ int rmi_set_noack(struct rmi * rmi) {
 	return 0;
 }
 
+int rmi_set_ack(struct rmi * rmi) {
+	rmi->ack = 1;
+	return 0;
+}
+
 void rmi_set_default_para(struct rmi * rmi) {
 	if (rmi->max_connect_num <= 0) {
 		rmi->max_connect_num = RMI_MAX_CONNECT;
@@ -938,7 +943,14 @@ int invoke(struct rmi * rmi, int id, unsigned char * pbuf, int len, unsigned cha
 	if (r_ret < 0) {
 		//trace("nonblock_write failed; err: %s\n", get_fd_error_str(ret));
 		goto socket_error;
-	}	
+	}
+
+	if (rmi->broadcast && rmi->no_ack) {
+		rmi->no_ack = 0;
+		*r_buf = NULL;
+		*r_len = 0;
+		return 0;	
+	}
 
 	// 获取返回值
 	r_ret = rmi_recv(rmi, r_buf, r_len);
@@ -1105,14 +1117,18 @@ void * rmi_server_thread(void * arg) {
 			}
 		} while(0);
 
-		if (RMI_SOCKET_UDP == rmi->socket_type && rmi->no_ack) {
-			rmi->no_ack = 0;
-			continue;
+		// multicast do not ack default
+		if (rmi->broadcast) {
+			if (!rmi->ack) {
+				continue;
+			} else {
+				rmi->ack = 0;
+			}
 		}
 
 		p_hdr->plen = len;
 		response(rmi, p_hdr, error_code);
-		if (len) {
+		if (0 == error_code) {
 			memcpy(pbuf, p_hdr, sizeof(struct rmi_header));
 		}
 		
@@ -1179,6 +1195,11 @@ failed:
 		pool_finit(rmi->user_data);
 		free(rmi->user_data);
 		rmi->user_data = NULL;
+	}
+
+	if (rmi->mem_pool) {
+		mem_destroy_pool(rmi->mem_pool);
+		rmi->mem_pool = NULL;
 	}
 
 	rmi_finit(rmi);

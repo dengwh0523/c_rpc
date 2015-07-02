@@ -840,6 +840,8 @@ int pool_init(POOL_S * pool, int num, int blk_size) {
 
 int pool_finit(POOL_S * pool) {
 	free(pool->pbuf);
+	lock_destroy(pool->work_list.lock);
+	lock_destroy(pool->free_list.lock);
 	memset(pool, 0, sizeof(POOL_S));
 
 	return 0;

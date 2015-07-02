@@ -213,7 +213,7 @@ int is_struct_def = 0;
 int is_first_para = 1;
 
 void init(void);
-void write_func_info(char *);
+int write_func_info(char *);
 void write_struct_info(void);
 void write_newtype_info(void);
 int write_func_para(char * name, char * dir);
@@ -2749,8 +2749,12 @@ void init() {
 	array_len = 1;
 }
 
-void write_func_info(char * ret_type) {
+int write_func_info(char * ret_type) {
 	if (is_func) {
+		if (s_func.pointer || !(!strcmp(ret_type, "int") || !strcmp(ret_type, "void"))) {
+			trace("return type error\n");
+			return -1;
+		}
 		strcat(s_func.ret_type, ret_type);
 		s_func.func_id = crc32(s_func.func_name, strlen(s_func.func_name));
 		list_write_data(&g_func_list, (unsigned char *)&s_func, sizeof(s_func), 0);
@@ -2760,6 +2764,8 @@ void write_func_info(char * ret_type) {
 	}
 	is_func = 0;
 	is_first_para = 1;
+
+	return 0;
 }
 
 void write_struct_info() {

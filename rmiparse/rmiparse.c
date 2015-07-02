@@ -588,8 +588,13 @@ int output_func_definition(FILE * fp, LIST_S * func_list) {
 	for (i = 0; i < func_num; i++) {
 		struct func_info * func_info;
 		int para_num;
+		int void_ret = 0;
 		char buf[16] = {0};
 		func_info = list_at(func_list, i);
+		if (0 == strcmp(func_info->ret_type, "void")) {
+			void_ret = 1;
+		}
+
 		output(fp, "static int invoke_func_");
 		sprintf(buf, "%08x", func_info->func_id);
 		output(fp, buf);
@@ -636,7 +641,11 @@ int output_func_definition(FILE * fp, LIST_S * func_list) {
 		output(fp, "\tparse_len = 0;\n");
 
 		output(fp, "\n\t// 调用函数\n");
-		output(fp, "\tr_ret = ");
+		if (!void_ret) {
+			output(fp, "\tr_ret = ");
+		} else {
+			output(fp, "\t");
+		}
 		output(fp, func_info->func_name);
 		output(fp, "(");
 		output(fp, "rmi");
@@ -669,7 +678,9 @@ int output_func_definition(FILE * fp, LIST_S * func_list) {
 		output(fp, "\t	return -1;\n");
 		output(fp, "\t}\n");
 		output(fp, "\tbuf = *ret_buf + sizeof(struct rmi_header);\n");
-		output(fp, "\tparse_len += func_serialize(rmi, (unsigned char *)&r_ret, buf+parse_len, &rmi->return_para[0]);\n");
+		if (!void_ret) {
+			output(fp, "\tparse_len += func_serialize(rmi, (unsigned char *)&r_ret, buf+parse_len, &rmi->return_para[0]);\n");
+		}
 
 		for (j = 0; j < para_num; j++) {
 			struct parameter * para;
@@ -706,7 +717,11 @@ int output_proxier_func(FILE * fp, LIST_S * func_list) {
 	for (i = 0; i < func_num; i++) {
 		struct func_info * func_info;
 		int para_num;
+		int void_ret = 0;
 		func_info = list_at(func_list, i);
+		if (0 == strcmp(func_info->ret_type, "void")) {
+			void_ret = 1;
+		}
 
 		// function interface
 		output(fp, func_info->ret_type);
@@ -760,7 +775,8 @@ int output_proxier_func(FILE * fp, LIST_S * func_list) {
 		output(fp, "\tfunc_entry = get_func_entry(rmi, func_id);\n");
 		output(fp, "\tif (NULL == func_entry) {\n");
 		output(fp, "\t	trace(\"no such function\\n\");\n");
-		output(fp, "\t	return -1;\n");
+		output(fp, "\t	r_ret = -1;\n");
+		output(fp, "\t	goto exit;\n");
 		output(fp, "\t}\n");
 
 		output(fp, "\n\t// 序列化入参数\n");
@@ -782,14 +798,28 @@ int output_proxier_func(FILE * fp, LIST_S * func_list) {
 
 		output(fp, "\n\t// 远程调用\n");
 		output(fp, "\trmi_lock(rmi);\n");
+		if (void_ret) {
+			output(fp, "\tif (rmi->broadcast) {\n");
+			output(fp, "\t	rmi_set_noack(rmi);\n");
+			output(fp, "\t}\n");
+		}
 		output(fp, "\tif (0 != invoke(rmi, func_id, buf, len, &pdata, &len)) {\n");		
 		output(fp, "\t	rmi_unlock(rmi);\n");
 		output(fp, "\t	trace(\"invoke failed\\n\");\n");
-		output(fp, "\t	return -1;\n");
+		output(fp, "\t	r_ret = -1;\n");
+		output(fp, "\t	goto exit;\n");
+		output(fp, "\t}\n");
+
+		output(fp, "\tif (len <= 0) {\n");
+		output(fp, "\t	rmi_unlock(rmi);\n");
+		output(fp, "\t	r_ret = 0;\n");
+		output(fp, "\t	goto exit;\n");
 		output(fp, "\t}\n");
 		
 		output(fp, "\n\t// 反序列化出参数\n");
-		output(fp, "\tparse_len += func_deserialize(rmi, (unsigned char *)&r_ret, pdata+parse_len, &rmi->return_para[0]);\n");
+		if (!void_ret) {
+			output(fp, "\tparse_len += func_deserialize(rmi, (unsigned char *)&r_ret, pdata+parse_len, &rmi->return_para[0]);\n");
+		}
 		for (j = 0; j < para_num; j++) {
 			struct parameter * para;
 			char buf[32] = {0};
@@ -811,10 +841,16 @@ int output_proxier_func(FILE * fp, LIST_S * func_list) {
 	
 		output(fp, "\tif (len != parse_len) {\n");
 		output(fp, "\t	trace(\"parse error\\n\");\n");
-		output(fp, "\t	return -1;\n");
+		output(fp, "\t	r_ret = -1;\n");
+		output(fp, "\t	goto exit;\n");
 		output(fp, "\t}\n");
 
-		output(fp, "\n\treturn r_ret;\n");
+		output(fp, "\nexit:");
+		if (void_ret) {
+			output(fp, "\n\treturn;\n");
+		} else {
+			output(fp, "\n\treturn r_ret;\n");
+		}
 		output(fp, "}\n\n");
 	}
 
