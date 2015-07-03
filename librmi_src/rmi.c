@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #define UDP_BURST_LEN	(32*1024)
+#define BROADCAST_PACKET_LEN	2048
 #define BROADCAST_ADDR	"255.255.255.255"
 
 void * rmi_listen_thread(void * arg);
@@ -570,7 +571,7 @@ int rmi_broadcast_recv(struct rmi * rmi, unsigned char ** r_buf, int * r_len) {
 		//trace("nonblock_read failed; err: %s\n", get_fd_error_str(ret));
 		return -1;
 	}
-	len = 2048;
+	len = BROADCAST_PACKET_LEN;
 	pdata = mem_palloc(rmi->mem_pool, len);
 	if (NULL == pdata) {
 		trace("malloc error\n");
@@ -656,7 +657,7 @@ int rmi_send(struct rmi * rmi, unsigned char * pbuf, int len) {
 	int ret = 0;
 	
 	if (rmi->broadcast) {
-		if (len > 1450) {
+		if (len > BROADCAST_PACKET_LEN) {
 			trace("packet is too much for broadcast\n");
 			return -1;
 		}
@@ -723,11 +724,8 @@ int udp_accept(struct rmi * rmi) {
 	strcpy(rmi->peer_ip, src_ip);
 	rmi->peer_port = port;
 	
-	if (rmi->broadcast) {
-		host = NULL;
-	} else {
-		host = src_ip;
-	}
+	host = src_ip;
+		
 	client_fd = create_udp_client_socket(host, port);
 	if (client_fd <= 0) {
 		trace("create_udp_client_socket\n");
@@ -736,19 +734,11 @@ int udp_accept(struct rmi * rmi) {
 
 	response(NULL, &hdr, 0);
 
-	if (rmi->broadcast) {
-		ret = udp_send(client_fd, (unsigned char *)&hdr, sizeof(hdr), BROADCAST_ADDR, port);
-		if (ret <= 0) {
-			trace("udp_send failed\n");
-			return -1;
-		}
-	} else {
-		ret = nonblock_write(client_fd, (unsigned char *)&hdr, sizeof(hdr), rmi->timeout);
-		if (ret < 0) {
-			trace("nonblock_write failed\n");
-			close_fd(client_fd);
-			return -1;
-		}
+	ret = nonblock_write(client_fd, (unsigned char *)&hdr, sizeof(hdr), rmi->timeout);
+	if (ret < 0) {
+		trace("nonblock_write failed\n");
+		close_fd(client_fd);
+		return -1;
 	}
 
 	ret = nonblock_read(client_fd, (unsigned char *)&hdr, sizeof(hdr), rmi->timeout);
@@ -788,10 +778,7 @@ int udp_connect(struct rmi * rmi, char * host, unsigned short port) {
 	gen_header(&hdr, 0, 0, 0);
 	hdr_orig = hdr;
 	serialize_rmi_header(&hdr);
-
-	if (rmi->broadcast) {
-		host = BROADCAST_ADDR;
-	}
+	
 	ret = udp_send(fd, (unsigned char *)&hdr, sizeof(hdr), host, port);
 	if (ret < 0) {
 		trace("udp_send failed\n");
@@ -826,20 +813,12 @@ int udp_connect(struct rmi * rmi, char * host, unsigned short port) {
 	strcpy(rmi->peer_ip, dst_ip);
 	rmi->peer_port = dst_port;
 
-	if (rmi->broadcast) {
-		ret = udp_send(fd, (unsigned char *)&hdr, sizeof(hdr), BROADCAST_ADDR, dst_port);
-		if (ret <= 0) {
-			trace("udp_send failed\n");
-			goto failed;
-		}
-	} else {
-		udp_set_dst(fd, dst_ip, dst_port);
-		
-		ret = nonblock_write(fd, (unsigned char *)&hdr, sizeof(hdr), rmi->timeout);
-		if (ret < 0) {
-			trace("nonblock_write failed\n");
-			goto failed;
-		}
+	udp_set_dst(fd, dst_ip, dst_port);
+	
+	ret = nonblock_write(fd, (unsigned char *)&hdr, sizeof(hdr), rmi->timeout);
+	if (ret < 0) {
+		trace("nonblock_write failed\n");
+		goto failed;
 	}
 
 set_buf: 
@@ -1175,15 +1154,6 @@ void * rmi_server_thread(void * arg) {
 				break;
 			}
 		} while(0);
-
-		// multicast do not ack default
-		if (rmi->broadcast) {
-			if (!rmi->ack) {
-				continue;
-			} else {
-				rmi->ack = 0;
-			}
-		}
 
 		p_hdr->plen = len;
 		response(rmi, p_hdr, error_code);

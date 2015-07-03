@@ -10,6 +10,7 @@ EXPORTS
 	rmi_set_recv_buf_size
 	rmi_set_broadcast
 	rmi_set_noack
+	rmi_set_ack
 	rmi_set_keepalive_time
 	rmi_set_user_data
 	rmi_get_user_data
