@@ -1349,7 +1349,7 @@ int rmi_server_close(struct rmi * rmi) {
 	tpool_destroy(rmi->thread_pool);
 	rmi->thread_pool = NULL;
 
-	if (!rmi->broadcast) {
+	if (!rmi->broadcast && rmi->user_data) {
 		pool_operate_it(rmi->user_data, rmi_operate_close);
 
 		while(pool_size(rmi->user_data)) {
