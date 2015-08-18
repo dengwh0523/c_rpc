@@ -96,6 +96,7 @@ struct rmi_header {
 };
 
 struct struct_entry {
+	char * member_name;
 	int field_num;
 	int field_type;
 	char * type_name;
@@ -156,8 +157,6 @@ struct func_entry {
 	struct struct_entry * para;
 };
 
-/*#define INCLUDE_RMI_MODEL(ID)	(#include "ID##_rmi.h")*/
-
 #define RMI_INIT_SERVER(server_rmi, ID) \
 do {\
 	rmi_init(server_rmi);\
@@ -200,6 +199,8 @@ int func_deserialize(struct rmi * rmi, unsigned char * pdata, const unsigned cha
 int find_response(struct rmi_header * hdr, struct rmi_header * r_hdr);
 void gen_header(struct rmi_header * hdr, int id, int len, int seq);
 int invoke(struct rmi * rmi, int id, unsigned char * pbuf, int len, unsigned char ** r_buf, int * r_len);
+
+int rmi_print_struct_info(struct rmi * rmi, char * struct_name, char * para_name, const unsigned char * pdata, int * pindex);
 
 #ifdef __cplusplus
 }

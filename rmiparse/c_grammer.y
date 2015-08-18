@@ -369,6 +369,10 @@ struct_declaration
 	: specifier_qualifier_list struct_declarator_list ';'
 	{
 		//printf("%s\n", $1);
+		if (s_para.pointer) {
+			trace("do not support pointer in struct now!\n");
+			return -1;
+		}
 		list_write_data(&s_struct.para_list, (unsigned char *)&s_para, sizeof(s_para), 0);
 		memset(&s_para, 0, sizeof(s_para));
 	}

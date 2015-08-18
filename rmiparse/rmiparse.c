@@ -329,6 +329,11 @@ int output_struct_member(FILE * fp, LIST_S * struct_list) {
 			para = list_at(&struct_info->para_list, j);
 			output(fp, "\t");
 			output(fp, "{");
+			// member name
+			output(fp, "\"");
+			output(fp, para->name);
+			output(fp, "\"");
+			output(fp, ", ");
 			// field num
 			sprintf(buf, "%d", para->field_num);
 			output(fp, buf);
@@ -467,7 +472,11 @@ int output_func_para(FILE * fp, LIST_S * func_list) {
 		for (j = 0; j < para_num; j++) {
 			struct parameter * para;
 			para = list_at(&func_info->para_list, j);
-			output(fp, "\t{0, ");
+			output(fp, "\t{");
+			output(fp, "\"");
+			output(fp, para->name);
+			output(fp, "\"");
+			output(fp, ", 0, ");
 			output(fp, get_field_type(para->field_type));
 			output(fp, ", ");
 			if (is_struct_type(para->type)) {
@@ -493,7 +502,7 @@ int output_func_para(FILE * fp, LIST_S * func_list) {
 int output_return_para(FILE * fp) {	
 	output(fp, "// funtion return parameter\n");
 	output(fp, "static struct struct_entry return_para[] = {\n");
-	output(fp, "	{0, RMI_FIELD_SIGNED, NULL, 1, sizeof(int), 0},\n");
+	output(fp, "	{NULL, 0, RMI_FIELD_SIGNED, NULL, 1, sizeof(int), 0},\n");
 	output(fp, "};\n\n");
 
 	return 0;

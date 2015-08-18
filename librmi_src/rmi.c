@@ -1433,6 +1433,167 @@ int rmi_client_close(struct rmi * rmi) {
 	return 0;
 }
 
+// set unsigned char, short, int, long long
+int rmi_print_varint(const unsigned char * pdata, const struct struct_entry * entry) {
+	unsigned long long value;
+	switch(entry->type_len) {
+		case sizeof(char) : 
+			value = *(unsigned char *)pdata;
+			break;
+		case sizeof(short) :
+			value = *(unsigned short *)pdata;
+			break;
+		case sizeof(int) :
+			value = *(unsigned int *)pdata;
+			break;
+		case sizeof(long long) :
+			value = *(unsigned long long *)pdata;
+			break;
+		default	:
+			trace("para error\n");
+			return -1;
+	}
+	
+	printf("%Lu[0x%Lx]", value, value);
+	return 0;
+}
+
+// set signed 
+int rmi_print_varint_signed(const unsigned char * pdata, const struct struct_entry * entry) {
+	long long value;
+	switch(entry->type_len) {
+		case sizeof(char) : 
+			value = *(signed char *)pdata;
+			break;
+		case sizeof(short) :
+			value = *(short *)pdata;
+			break;
+		case sizeof(int) :
+			value = *(int *)pdata;
+			break;
+		case sizeof(long long) :
+			value = *(long long *)pdata;
+			break;
+		default	:
+			trace("para error\n");
+			return -1;
+	}
+	printf("%Ld[0x%Lx]", value, value);
+	return 0;
+}
+
+// set float, double
+int rmi_print_float(const unsigned char * pdata, const struct struct_entry * entry) {
+	long double value;
+	switch(entry->type_len) {
+		case sizeof(float) : 
+			value = *(float *)pdata;
+			break;
+		case sizeof(double) :
+			value = *(double *)pdata;
+			break;
+		case sizeof(long double) :
+			value = *(long double *)pdata;
+			break;
+		default	:
+			trace("para error\n");
+			return -1;
+	}
+	printf("%Lf", value);
+	return 0;
+}
+
+// set string, struct
+int rmi_print_string(const unsigned char * pdata, const struct struct_entry * entry) {	
+	if (strlen(pdata)) {
+		printf("%s", pdata);
+	} else {
+		printf("%s", "[null]");
+	}
+	return 0;
+}
+
+void rmi_print_tab(int num) {
+	int i;
+	
+	for (i = 0; i < num; i++) {
+		printf("    ");
+	}
+}
+
+int rmi_print_struct(struct rmi * rmi, char * struct_name, const unsigned char * pdata, int * pindex) {	
+	int i, j;
+	struct struct_pair_entry * pair_entry;
+	const struct struct_entry * entry;
+	int member_num;
+	int len = 0;
+
+	pair_entry = get_struct_entry(rmi, struct_name);
+	if (NULL == pair_entry) {
+		trace("%s is not struct\n", struct_name);
+		return -1;
+	}
+
+	entry = pair_entry->entry;
+	member_num = pair_entry->member_num;
+
+	printf("{");
+	*pindex = *pindex + 1;
+
+	for (i = 0; i < member_num; i++) {
+		const unsigned char * base = pdata+entry[i].offset;
+		for (j = 0; j < entry[i].num; j++) {	// array
+
+			// print member name
+			printf("\n");
+			rmi_print_tab(*pindex);
+			if (entry[i].num > 1) {
+				printf(".%s[%d] = ", entry[i].member_name, j);
+			} else {
+				printf(".%s = ", entry[i].member_name, j);
+			}
+			// set value			
+			switch(entry[i].field_type) {
+			case RMI_FIELD_VAR :
+				rmi_print_varint(base, &entry[i]);
+				break;
+			case RMI_FIELD_FIX :
+				rmi_print_float(base, &entry[i]);
+				break;
+			case RMI_FIELD_LEN:
+				rmi_print_string(base, &entry[i]);
+				break;
+			case RMI_FIELD_SIGNED:
+				rmi_print_varint_signed(base, &entry[i]);
+				break;
+			case RMI_FIELD_STRUCT :
+			{
+				rmi_print_struct(rmi, entry[i].type_name, base, pindex);
+				break;
+			}
+			default :
+				trace("field type[%d] is not support now\n", entry[i].field_type);
+				return -1;
+			}
+			base += entry[i].type_len;
+		}
+	}
+/*	printf("\nindex: %d\n", *pindex);*/
+	printf("\n");
+	*pindex = *pindex - 1;
+	rmi_print_tab(*pindex);
+	printf("}");
+
+	return 0;
+}
+
+int rmi_print_struct_info(struct rmi * rmi, char * struct_name, char * para_name, const unsigned char * pdata, int * pindex) {	
+	printf("%s %s = ", struct_name, para_name);
+	rmi_print_struct(rmi, struct_name, pdata, pindex);
+	printf("\n");
+	return 0;
+}
+
 #ifdef __cplusplus
 }
 #endif

@@ -612,17 +612,17 @@ static const yytype_uint16 yyrline[] =
      226,   229,   241,   244,   250,   251,   255,   256,   260,   261,
      262,   263,   264,   268,   273,   278,   283,   288,   293,   298,
      303,   308,   313,   318,   321,   322,   330,   345,   350,   359,
-     360,   364,   365,   369,   378,   387,   390,   393,   399,   400,
-     404,   409,   423,   424,   428,   429,   430,   434,   435,   439,
-     440,   444,   445,   449,   457,   461,   465,   468,   472,   473,
-     478,   479,   489,   490,   491,   492,   496,   497,   502,   503,
-     507,   508,   512,   518,   524,   530,   536,   544,   555,   556,
-     560,   561,   565,   569,   570,   574,   575,   576,   577,   578,
-     579,   580,   581,   582,   586,   587,   588,   592,   593,   597,
-     598,   599,   600,   601,   602,   606,   607,   608,   612,   613,
-     614,   615,   619,   620,   624,   625,   629,   630,   634,   635,
-     636,   640,   641,   642,   643,   647,   648,   649,   650,   651,
-     655,   656,   660,   661,   665,   666,   667,   668
+     360,   364,   365,   369,   382,   391,   394,   397,   403,   404,
+     408,   413,   427,   428,   432,   433,   434,   438,   439,   443,
+     444,   448,   449,   453,   461,   465,   469,   472,   476,   477,
+     482,   483,   493,   494,   495,   496,   500,   501,   506,   507,
+     511,   512,   516,   522,   528,   534,   540,   548,   559,   560,
+     564,   565,   569,   573,   574,   578,   579,   580,   581,   582,
+     583,   584,   585,   586,   590,   591,   592,   596,   597,   601,
+     602,   603,   604,   605,   606,   610,   611,   612,   616,   617,
+     618,   619,   623,   624,   628,   629,   633,   634,   638,   639,
+     640,   644,   645,   646,   647,   651,   652,   653,   654,   655,
+     659,   660,   664,   665,   669,   670,   671,   672
 };
 #endif
 
@@ -2270,6 +2270,10 @@ yyreduce:
 #line 370 "c_grammer.y"
     {
 		//printf("%s\n", $1);
+		if (s_para.pointer) {
+			trace("do not support pointer in struct now!\n");
+			return -1;
+		}
 		list_write_data(&s_struct.para_list, (unsigned char *)&s_para, sizeof(s_para), 0);
 		memset(&s_para, 0, sizeof(s_para));
 	}
@@ -2278,7 +2282,7 @@ yyreduce:
   case 114:
 
 /* Line 1806 of yacc.c  */
-#line 379 "c_grammer.y"
+#line 383 "c_grammer.y"
     {
 		char last_type[sizeof(g_type)] = {0};
 		strcpy(last_type, g_type);
@@ -2292,7 +2296,7 @@ yyreduce:
   case 115:
 
 /* Line 1806 of yacc.c  */
-#line 388 "c_grammer.y"
+#line 392 "c_grammer.y"
     {
 	}
     break;
@@ -2300,7 +2304,7 @@ yyreduce:
   case 116:
 
 /* Line 1806 of yacc.c  */
-#line 391 "c_grammer.y"
+#line 395 "c_grammer.y"
     {
 	}
     break;
@@ -2308,7 +2312,7 @@ yyreduce:
   case 117:
 
 /* Line 1806 of yacc.c  */
-#line 394 "c_grammer.y"
+#line 398 "c_grammer.y"
     {
 	}
     break;
@@ -2316,7 +2320,7 @@ yyreduce:
   case 120:
 
 /* Line 1806 of yacc.c  */
-#line 405 "c_grammer.y"
+#line 409 "c_grammer.y"
     {
 		trace("no mark\n");
 		return -1;
@@ -2326,7 +2330,7 @@ yyreduce:
   case 121:
 
 /* Line 1806 of yacc.c  */
-#line 410 "c_grammer.y"
+#line 414 "c_grammer.y"
     {
 		//memset(&s_para, 0, sizeof(s_para));
 		strcpy(s_para.name, g_name);
@@ -2345,7 +2349,7 @@ yyreduce:
   case 133:
 
 /* Line 1806 of yacc.c  */
-#line 450 "c_grammer.y"
+#line 454 "c_grammer.y"
     {
 		if (is_func) {
 			s_func.pointer = 1;
@@ -2358,7 +2362,7 @@ yyreduce:
   case 135:
 
 /* Line 1806 of yacc.c  */
-#line 462 "c_grammer.y"
+#line 466 "c_grammer.y"
     {
 		strcpy(g_name, (yyvsp[(1) - (1)].name));
 	}
@@ -2367,7 +2371,7 @@ yyreduce:
   case 136:
 
 /* Line 1806 of yacc.c  */
-#line 466 "c_grammer.y"
+#line 470 "c_grammer.y"
     {
 	}
     break;
@@ -2375,7 +2379,7 @@ yyreduce:
   case 137:
 
 /* Line 1806 of yacc.c  */
-#line 469 "c_grammer.y"
+#line 473 "c_grammer.y"
     {
 		array_len = -1;
 	}
@@ -2384,7 +2388,7 @@ yyreduce:
   case 139:
 
 /* Line 1806 of yacc.c  */
-#line 474 "c_grammer.y"
+#line 478 "c_grammer.y"
     {
 		strcat(s_func.func_name, (yyvsp[(1) - (4)].name));
 		is_func = 1;
@@ -2394,7 +2398,7 @@ yyreduce:
   case 141:
 
 /* Line 1806 of yacc.c  */
-#line 480 "c_grammer.y"
+#line 484 "c_grammer.y"
     {
 /*		strcat(s_func.func_name, $1);*/
 /*		is_func = 1;*/
@@ -2406,7 +2410,7 @@ yyreduce:
   case 152:
 
 /* Line 1806 of yacc.c  */
-#line 513 "c_grammer.y"
+#line 517 "c_grammer.y"
     {
 		if (0 != check_func_first_para()) {
 			return -1;
@@ -2417,7 +2421,7 @@ yyreduce:
   case 153:
 
 /* Line 1806 of yacc.c  */
-#line 519 "c_grammer.y"
+#line 523 "c_grammer.y"
     {
 		if (0 != check_func_first_para()) {
 			return -1;
@@ -2428,7 +2432,7 @@ yyreduce:
   case 154:
 
 /* Line 1806 of yacc.c  */
-#line 525 "c_grammer.y"
+#line 529 "c_grammer.y"
     {
 		if (0 != check_func_first_para()) {
 			return -1;
@@ -2439,7 +2443,7 @@ yyreduce:
   case 155:
 
 /* Line 1806 of yacc.c  */
-#line 531 "c_grammer.y"
+#line 535 "c_grammer.y"
     {
 		if (0 != write_func_para(g_name, (yyvsp[(1) - (3)].name))) {
 			return -1;
@@ -2450,7 +2454,7 @@ yyreduce:
   case 156:
 
 /* Line 1806 of yacc.c  */
-#line 537 "c_grammer.y"
+#line 541 "c_grammer.y"
     {
 		char name[16] = {0};
 		sprintf(name, "para%d", list_size(&s_func.para_list));
@@ -2463,7 +2467,7 @@ yyreduce:
   case 157:
 
 /* Line 1806 of yacc.c  */
-#line 545 "c_grammer.y"
+#line 549 "c_grammer.y"
     {		
 		char name[16] = {0};
 		sprintf(name, "para%d", list_size(&s_func.para_list));
@@ -2476,7 +2480,7 @@ yyreduce:
   case 162:
 
 /* Line 1806 of yacc.c  */
-#line 566 "c_grammer.y"
+#line 570 "c_grammer.y"
     {
 		s_para.pointer = 1;
 	}
@@ -2485,7 +2489,7 @@ yyreduce:
 
 
 /* Line 1806 of yacc.c  */
-#line 2489 "c_grammer.tab.c"
+#line 2493 "c_grammer.tab.c"
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -2716,7 +2720,7 @@ yyreturn:
 
 
 /* Line 2067 of yacc.c  */
-#line 671 "c_grammer.y"
+#line 675 "c_grammer.y"
 
 #include <stdio.h>
 
