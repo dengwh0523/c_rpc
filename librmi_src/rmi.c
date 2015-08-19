@@ -1454,7 +1454,7 @@ int rmi_print_varint(const unsigned char * pdata, const struct struct_entry * en
 			return -1;
 	}
 	
-	printf("%Lu[0x%Lx]", value, value);
+	printf("%llu[0x%llx]", value, value);
 	return 0;
 }
 
@@ -1478,7 +1478,7 @@ int rmi_print_varint_signed(const unsigned char * pdata, const struct struct_ent
 			trace("para error\n");
 			return -1;
 	}
-	printf("%Ld[0x%Lx]", value, value);
+	printf("%lld[0x%llx]", value, value);
 	return 0;
 }
 

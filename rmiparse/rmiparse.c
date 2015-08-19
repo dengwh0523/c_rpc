@@ -562,6 +562,10 @@ int output_func_map(FILE * fp, LIST_S * func_list, int flag) {
 		output(fp, "_para},\n");
 	}
 
+	if (func_num <= 0) {
+		output(fp, "\t{0, NULL, 0, NULL}\n");
+	}
+
 	output(fp, "};\n\n");
 
 	output(fp, "static const int func_num = STR_ARRAY_LEN(func_table);\n");

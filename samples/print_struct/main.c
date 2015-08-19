@@ -1,24 +1,13 @@
-#include <signal.h>
-#include <pthread.h>
-
 #include "test.h"
 #include "rmi.h"
+#include "test_rmi.h"
 
 int main(int argc, char * argv[]) {
-	unsigned short port;
-	int fd = -1;
-	int i;
-	struct sigaction act;
-
 	struct rmi server_rmi;
 	
 	struct aaa staaa;
 	struct bbb stbbb;
 	int index = 0;
-	
-	act.sa_sigaction = SIG_IGN;
-    act.sa_flags = SA_NOMASK;
-    sigaction(SIGPIPE, &act, NULL);
 
 	RMI_INIT_SERVER(&server_rmi, test);
 	// rmi_server_start(&server_rmi, 1000);

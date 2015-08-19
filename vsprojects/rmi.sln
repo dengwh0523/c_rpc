@@ -5,6 +5,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rmiparse", "rmiparse.vcproj
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "librmi", "librmi.vcproj", "{D85F5704-01BF-45D4-89B8-852452F936E7}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{AAE294B6-B793-472B-9791-232CAD6C1140}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "print_struct", "print_struct.vcproj", "{431FD02A-D2AE-469B-AE34-63AEAFED9501}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -19,8 +23,15 @@ Global
 		{D85F5704-01BF-45D4-89B8-852452F936E7}.Debug|Win32.Build.0 = Debug|Win32
 		{D85F5704-01BF-45D4-89B8-852452F936E7}.Release|Win32.ActiveCfg = Release|Win32
 		{D85F5704-01BF-45D4-89B8-852452F936E7}.Release|Win32.Build.0 = Release|Win32
+		{431FD02A-D2AE-469B-AE34-63AEAFED9501}.Debug|Win32.ActiveCfg = Debug|Win32
+		{431FD02A-D2AE-469B-AE34-63AEAFED9501}.Debug|Win32.Build.0 = Debug|Win32
+		{431FD02A-D2AE-469B-AE34-63AEAFED9501}.Release|Win32.ActiveCfg = Release|Win32
+		{431FD02A-D2AE-469B-AE34-63AEAFED9501}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{431FD02A-D2AE-469B-AE34-63AEAFED9501} = {AAE294B6-B793-472B-9791-232CAD6C1140}
 	EndGlobalSection
 EndGlobal

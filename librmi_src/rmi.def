@@ -26,6 +26,7 @@ EXPORTS
 	find_response
 	gen_header
 	invoke
+	rmi_print_struct_info
 	
 	init_thread_cnt
 	add_thread_cnt
