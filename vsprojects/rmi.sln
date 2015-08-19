@@ -8,6 +8,19 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{AAE294B6-B793-472B-9791-232CAD6C1140}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "print_struct", "print_struct.vcproj", "{431FD02A-D2AE-469B-AE34-63AEAFED9501}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D85F5704-01BF-45D4-89B8-852452F936E7} = {D85F5704-01BF-45D4-89B8-852452F936E7}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "performence_server", "performence_server.vcproj", "{95897319-F39A-4697-9964-3F9AE8781D9D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D85F5704-01BF-45D4-89B8-852452F936E7} = {D85F5704-01BF-45D4-89B8-852452F936E7}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "performence_client", "performence_client.vcproj", "{B962BEB7-B6A4-4368-9B5D-4CA0C0FFCEBD}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D85F5704-01BF-45D4-89B8-852452F936E7} = {D85F5704-01BF-45D4-89B8-852452F936E7}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,11 +40,21 @@ Global
 		{431FD02A-D2AE-469B-AE34-63AEAFED9501}.Debug|Win32.Build.0 = Debug|Win32
 		{431FD02A-D2AE-469B-AE34-63AEAFED9501}.Release|Win32.ActiveCfg = Release|Win32
 		{431FD02A-D2AE-469B-AE34-63AEAFED9501}.Release|Win32.Build.0 = Release|Win32
+		{95897319-F39A-4697-9964-3F9AE8781D9D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{95897319-F39A-4697-9964-3F9AE8781D9D}.Debug|Win32.Build.0 = Debug|Win32
+		{95897319-F39A-4697-9964-3F9AE8781D9D}.Release|Win32.ActiveCfg = Release|Win32
+		{95897319-F39A-4697-9964-3F9AE8781D9D}.Release|Win32.Build.0 = Release|Win32
+		{B962BEB7-B6A4-4368-9B5D-4CA0C0FFCEBD}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B962BEB7-B6A4-4368-9B5D-4CA0C0FFCEBD}.Debug|Win32.Build.0 = Debug|Win32
+		{B962BEB7-B6A4-4368-9B5D-4CA0C0FFCEBD}.Release|Win32.ActiveCfg = Release|Win32
+		{B962BEB7-B6A4-4368-9B5D-4CA0C0FFCEBD}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{431FD02A-D2AE-469B-AE34-63AEAFED9501} = {AAE294B6-B793-472B-9791-232CAD6C1140}
+		{95897319-F39A-4697-9964-3F9AE8781D9D} = {AAE294B6-B793-472B-9791-232CAD6C1140}
+		{B962BEB7-B6A4-4368-9B5D-4CA0C0FFCEBD} = {AAE294B6-B793-472B-9791-232CAD6C1140}
 	EndGlobalSection
 EndGlobal

@@ -74,8 +74,16 @@ EXPORTS
 	ip_to_net
 	net_to_ip
 	close_fd
+	socket_init
 	
 	thread_run
+	tpool_create
+	tpool_start
+	tpool_destroy
+	lock_lock
+	lock_unlock
+	lock_create
+	lock_destroy
 	
 	mem_palloc
 	

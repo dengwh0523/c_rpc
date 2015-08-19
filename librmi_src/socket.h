@@ -21,6 +21,9 @@ char * net_to_ip(int addr);
 
 // create socket
 int close_fd(int fd);
+#ifdef _WIN32
+int socket_init();
+#endif
 
 #ifndef _WIN32
 int create_epoll(int maxfd);

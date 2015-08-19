@@ -493,6 +493,9 @@ int output_func_para(FILE * fp, LIST_S * func_list) {
 			output(fp, "), ");
 			output(fp, "0},\n");
 		}
+		if (para_num <= 0) {
+			output(fp, "\t{NULL, 0, 0, NULL, 0, 0, 0}\n");
+		}
 		output(fp, "};\n\n");
 	}
 

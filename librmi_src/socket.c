@@ -18,6 +18,10 @@
 #include "socket.h"
 #include "debug.h"
 
+#ifdef _WIN32
+#pragma comment(lib, "Ws2_32.lib")
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -62,6 +66,25 @@ int close_fd(int fd) {
 	}
 	return 0;
 }
+
+#ifdef _WIN32
+int socket_init() {
+	WSADATA wsaData;
+	WORD wVersionRequested = MAKEWORD(1, 1);
+	int nResult = WSAStartup(wVersionRequested, &wsaData);
+	if (nResult != 0)
+		return -1;
+
+	if (LOBYTE(wsaData.wVersion) != 1 || HIBYTE(wsaData.wVersion) != 1)
+	{
+		WSACleanup();
+		WSASetLastError (WSAVERNOTSUPPORTED);
+		return -1;
+	}
+
+	return 0;
+}
+#endif
 
 #ifndef _WIN32
 int create_epoll(int maxfd) {
