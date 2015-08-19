@@ -1492,7 +1492,7 @@ int rmi_print_float(const unsigned char * pdata, const struct struct_entry * ent
 		case sizeof(double) :
 			value = *(double *)pdata;
 			break;
-#ifndef _WIN32
+#if 0	// forbidden; for compatible between linux and windows
 		case sizeof(long double) :
 			value = *(long double *)pdata;
 			break;

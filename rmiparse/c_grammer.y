@@ -387,6 +387,11 @@ specifier_qualifier_list
 		strcat(g_type, $$);
 		strcat(g_type, " ");
 		strcat(g_type, last_type);
+
+		if (0 == strcmp(g_type, "long double")) {
+			trace("please do not use type of long double, because it is not compatible between linux and windows\n");
+			return -1;
+		}
 	}
 	| type_specifier
 	{

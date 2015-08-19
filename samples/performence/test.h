@@ -10,7 +10,7 @@ struct aaa {
 	char b MARK(1, 0);
 	float c MARK(2, 0);
 	double d MARK(3, 0);
-	long double e MARK(4, 0);
+	double e MARK(4, 0);
 	char f[TEST_MACRO] MARK(5, 1);
 };
 struct bbb {

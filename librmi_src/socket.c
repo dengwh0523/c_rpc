@@ -211,7 +211,7 @@ int create_tcp_server_socket(unsigned short port) {
 		goto exit;
 	}
 	
-	if (listen(fd, 16) != 0) {
+	if (listen(fd, 1024) != 0) {
 		trace("listen error\n");
 		ret = -1;
 		goto exit;

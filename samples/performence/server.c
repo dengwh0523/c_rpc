@@ -108,6 +108,7 @@ int main(int argc, char * argv[]) {
 	}
 
 	RMI_INIT_SERVER(&server_rmi, test);
+	/*rmi_set_keepalive_time(&server_rmi, 0xfffffff);*/
 	rmi_server_start(&server_rmi, port);
 
 	getchar();
