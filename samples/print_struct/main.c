@@ -7,7 +7,6 @@ int main(int argc, char * argv[]) {
 	
 	struct aaa staaa;
 	struct bbb stbbb;
-	int index = 0;
 
 	RMI_INIT_SERVER(&server_rmi, test);
 	// rmi_server_start(&server_rmi, 1000);
@@ -43,10 +42,12 @@ struct bbb {
 	stbbb.a[0] = 0xffffffff;
 	stbbb.a_array[0] = staaa;
 	
-	rmi_print_struct_info(&server_rmi, "struct aaa", "staaa", (unsigned char *)&staaa, &index);
+	//rmi_print_struct_info(&server_rmi, "struct aaa", "staaa", (unsigned char *)&staaa);
 	
-	index = 0;
-	rmi_print_struct_info(&server_rmi, "struct bbb", "stbbb", (unsigned char *)&stbbb, &index);
+	//rmi_print_struct_info(&server_rmi, "struct bbb", "stbbb", (unsigned char *)&stbbb);
+
+	RMI_PRINT_STRUCT_INFO(&server_rmi, struct aaa, staaa);
+	RMI_PRINT_STRUCT_INFO(&server_rmi, struct bbb, stbbb);
 
 	getchar();
 

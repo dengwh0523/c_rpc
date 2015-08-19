@@ -1589,9 +1589,10 @@ int rmi_print_struct(struct rmi * rmi, char * struct_name, const unsigned char *
 	return 0;
 }
 
-int rmi_print_struct_info(struct rmi * rmi, char * struct_name, char * para_name, const unsigned char * pdata, int * pindex) {	
+int rmi_print_struct_info(struct rmi * rmi, char * struct_name, char * para_name, const unsigned char * pdata) {	
+	int index = 0;
 	printf("%s %s = ", struct_name, para_name);
-	rmi_print_struct(rmi, struct_name, pdata, pindex);
+	rmi_print_struct(rmi, struct_name, pdata, &index);
 	printf("\n");
 	return 0;
 }

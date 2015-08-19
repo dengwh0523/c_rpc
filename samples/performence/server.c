@@ -10,6 +10,7 @@
 #include "test.h"
 #include "rmi.h"
 #include "test_rmi.h"
+#include "socket.h"
 
 #define NET_TIMEOUT	100*1000	// unit: 1us
 

@@ -200,7 +200,9 @@ int find_response(struct rmi_header * hdr, struct rmi_header * r_hdr);
 void gen_header(struct rmi_header * hdr, int id, int len, int seq);
 int invoke(struct rmi * rmi, int id, unsigned char * pbuf, int len, unsigned char ** r_buf, int * r_len);
 
-int rmi_print_struct_info(struct rmi * rmi, char * struct_name, char * para_name, const unsigned char * pdata, int * pindex);
+int rmi_print_struct_info(struct rmi * rmi, char * struct_name, char * para_name, const unsigned char * pdata);
+#define RMI_PRINT_STRUCT_INFO(rmi, struct_type, para) \
+	rmi_print_struct_info(rmi, #struct_type, #para, (unsigned char *)&para)
 
 #ifdef __cplusplus
 }

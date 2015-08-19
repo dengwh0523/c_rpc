@@ -16,7 +16,7 @@
 #define MAX_NUM 2
 #define CONNECT_NUM	256
 
-#define WAIT_TIME	(10)	// unit: us
+#define WAIT_TIME	(10)	// unit: ms
 
 struct aaa gs_para1[MAX_NUM];
 struct bbb gs_para2[MAX_NUM];
