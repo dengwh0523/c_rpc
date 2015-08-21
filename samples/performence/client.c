@@ -14,7 +14,7 @@
 #include "socket.h"
 
 #define MAX_NUM 2
-#define CONNECT_NUM	256
+#define CONNECT_NUM	1000
 
 #define WAIT_TIME	(10)	// unit: ms
 
@@ -22,6 +22,8 @@ struct aaa gs_para1[MAX_NUM];
 struct bbb gs_para2[MAX_NUM];
 
 struct rmi gs_rmi[CONNECT_NUM];
+
+lock * g_lock;
 
 char * server_ip;
 unsigned short server_port;
@@ -34,10 +36,12 @@ void * test_proc(void * arg) {
 	int i;
 	int test_times = 1;
 	int n;
+
+	msleep(1 + 2000*(int)(rand()/(RAND_MAX+1.0)));
 	
 	rmi = &client_rmi;
 	RMI_INIT_CLIENT(rmi, test);
-/*	rmi_set_timeout(rmi, 500);*/
+	rmi_set_timeout(rmi, 5000);
 	if (0 != rmi_client_start(rmi, server_ip, server_port)) {
 		trace("rmi_client_start failed\n");
 		return NULL;
@@ -124,7 +128,9 @@ void * test_proc(void * arg) {
 		return NULL;
 	}
 	printf("test pass!!!\n");
+	lock_lock(g_lock);
 	test_cnt++;
+	lock_unlock(g_lock);
 
 	return NULL;
 }
@@ -159,14 +165,27 @@ int main(int argc, char * argv[]) {
 	server_ip = argv[1];
 	server_port = atoi(argv[2]);
 
+	g_lock = lock_create();
+
 	for(i = 0; i < CONNECT_NUM; i++) {
 		/*int ret = pthread_create(&pid, NULL, test_proc, NULL);*/
 /*		printf("pthread_create return : %d\n", ret);*/
-		thread_run(test_proc, NULL);
+		int j;
+		for (j = 0; j < 3; j++) {
+			if (thread_run(test_proc, NULL)) {
+				break;
+			} else {
+				msleep(10);
+			}
+		}
+		if (3 == j) {
+			trace("start test_proc thread failed\n");
+		}
 	}
 
 	getchar();
 	printf("successs cnt: %d\n", test_cnt);
+	lock_destroy(g_lock);
 
 	return 0;
 }

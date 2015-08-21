@@ -973,7 +973,7 @@ int invoke(struct rmi * rmi, int id, unsigned char * pbuf, int len, unsigned cha
 	// 发送消息
 	r_ret = rmi_send(rmi, pbuf, len+sizeof(struct rmi_header));
 	if (r_ret < 0) {
-		//trace("nonblock_write failed; err: %s\n", get_fd_error_str(ret));
+		trace("nonblock_write failed; err: %s\n", get_fd_error_str(r_ret));
 		goto socket_error;
 	}
 
@@ -987,7 +987,7 @@ int invoke(struct rmi * rmi, int id, unsigned char * pbuf, int len, unsigned cha
 	// 获取返回值
 	r_ret = rmi_recv(rmi, r_buf, r_len);
 	if (r_ret < 0) {
-		//trace("rmi_recv failed; err: %s\n", get_fd_error_str(ret));
+		trace("rmi_recv failed; err: %s\n", get_fd_error_str(r_ret));
 		goto socket_error;
 	}
 
@@ -1031,6 +1031,7 @@ int rmi_operate_close(void * src, void * dst) {
 
 	return 0;
 }
+
 void * rmi_listen_thread(void * arg) {
 	int ret = 0;
 	struct rmi * rmi = (struct rmi *)arg;	
@@ -1088,8 +1089,55 @@ void * rmi_listen_thread(void * arg) {
 		client_rmi->return_para = rmi->return_para;
 	
 /*		pthread_create(&client_rmi->pid, NULL, rmi_server_thread, (void *)client_rmi);*/
-		thread_run(rmi_server_thread, (void *)client_rmi);
-		pool_write_data(rmi->user_data, (unsigned char *)&client_rmi, sizeof(struct rmi *));
+		{
+			int i;
+			for (i = 0; i < 3; i++) {
+				if (thread_run(rmi_server_thread, (void *)client_rmi)) {
+					pool_write_data(rmi->user_data, (unsigned char *)&client_rmi, sizeof(struct rmi *));
+					break;
+				} else {
+					msleep(10);
+				}
+			}
+			if (3 == i) {
+				trace("rmi_server_thread start failed\n");
+				if (client_rmi->fd > 0) {
+					close_fd(client_rmi->fd);
+					client_rmi->fd = -1;
+				}
+				if (client_rmi->mem_pool) {
+					mem_destroy_pool(client_rmi->mem_pool);
+					client_rmi->mem_pool = NULL;
+				}
+				/*	if (rmi->user_data) {*/
+				/*		free(rmi->user_data);*/
+				/*		rmi->user_data = NULL;*/
+				/*	}*/
+
+				free(client_rmi);
+			}
+
+		}
+// 		if (thread_run(rmi_server_thread, (void *)client_rmi)) {
+// 			pool_write_data(rmi->user_data, (unsigned char *)&client_rmi, sizeof(struct rmi *));
+// 		} else {
+// 			trace("rmi_server_thread start failed\n");
+// 			if (client_rmi->fd > 0) {
+// 				close_fd(client_rmi->fd);
+// 				client_rmi->fd = -1;
+// 			}
+// 			if (client_rmi->mem_pool) {
+// 				mem_destroy_pool(client_rmi->mem_pool);
+// 				client_rmi->mem_pool = NULL;
+// 			}
+// 			/*	if (rmi->user_data) {*/
+// 			/*		free(rmi->user_data);*/
+// 			/*		rmi->user_data = NULL;*/
+// 			/*	}*/
+// 			/*	printf("!!!! connect num2: %d !!!!!!!!!!\n", pool_size(server_rmi->user_data));*/
+// 
+// 			free(client_rmi);
+// 		}
 		
 		//printf("!!!! connect num: %d !!!!!!!!!!\n", pool_size(rmi->user_data));
 	}
