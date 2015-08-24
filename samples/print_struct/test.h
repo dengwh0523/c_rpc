@@ -1,5 +1,5 @@
-#ifndef __RPC_H__
-#define __RPC_H__
+#ifndef __TEST_H__
+#define __TEST_H__
 
 #include "rmi.h"
 
