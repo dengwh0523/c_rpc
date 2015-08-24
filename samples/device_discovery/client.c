@@ -1,4 +1,10 @@
+#ifndef _WIN32
 #include <signal.h>
+#else
+#include <windows.h>
+#endif
+
+#include <stdlib.h>
 
 #include "test.h"
 #include "test_rmi.h"
@@ -14,8 +20,10 @@ unsigned short server_port;
 int test_cnt = 0;
 int connect_cnt = 0;
 
-int set_dev_info(struct rmi * rmi, DEV_INFO_S * pdev) {
+void set_dev_info(struct rmi * rmi, DEV_INFO_S * pdev) {
 	printf("dev_ip: %s\n", net_to_ip(pdev->dev_ip));
+
+	/*rmi_set_ack(rmi);*/
 
 	return 0;
 }
@@ -28,10 +36,9 @@ void * test_proc() {
 	
 	rmi = &client_rmi;
 	RMI_INIT_CLIENT(rmi, test);	
-	rmi_set_socket_type(rmi, RMI_SOCKET_UDP);
 	rmi_set_broadcast(rmi);
 	rmi_set_timeout(rmi, 500);
-	if (0 != rmi_client_start(rmi, server_ip, server_port)) {
+	if (0 != rmi_client_start(rmi, "255.255.255.255", server_port)) {
 		trace("rmi_client_start failed\n");
 		return NULL;
 	}
@@ -54,31 +61,50 @@ int main(int argc, char * argv[]) {
 	struct rmi * rmi;
 	int i;
 	int cnt;
+
+	struct rmi find_rmi;
+
+#ifndef _WIN32
 	pthread_t pid;
 	struct sigaction act;
 
-	struct rmi find_rmi;
+	act.sa_sigaction = SIG_IGN;
+	act.sa_flags = SA_NOMASK;
+	sigaction(SIGPIPE, &act, NULL);
+#else
+	if (0 != socket_init()) {
+		trace("socket init failed\n");
+		return -1;
+	}
+#endif
 	
-	if (argc != 3) {
-		printf("usage: %s host port\n", argv[0]);
+	if (argc != 2) {
+		printf("usage: %s port\n", argv[0]);
 		return -1;
 	}
 
-	server_ip = argv[1];
-	server_port = atoi(argv[2]);
-	
-	act.sa_sigaction = SIG_IGN;
-    act.sa_flags = SA_NOMASK;
-    sigaction(SIGPIPE, &act, NULL);
+	/*server_ip = argv[1];*/
+	server_port = atoi(argv[1]);
 
 	RMI_INIT_SERVER(&find_rmi, find);
-	rmi_set_socket_type(&find_rmi, RMI_SOCKET_UDP);
 	rmi_set_broadcast(&find_rmi);
 /*	rmi_set_keepalive_time(&find_rmi, 0xffffff);*/
 	rmi_server_start(&find_rmi, 8888);
 
 	for(i = 0; i < CONNECT_NUM; i++) {
-		int ret = pthread_create(&pid, NULL, test_proc, NULL);
+		/*int ret = pthread_create(&pid, NULL, test_proc, NULL);*/
+
+		int j;
+		for (j = 0; j < 3; j++) {
+			if (thread_run(test_proc, NULL)) {
+				break;
+			} else {
+				msleep(10);
+			}
+		}
+		if (3 == j) {
+			trace("start test_proc thread failed\n");
+		}
 	}
 
 	getchar();

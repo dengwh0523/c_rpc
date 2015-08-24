@@ -38,7 +38,7 @@ extern "C" {
 /*} TEST3_S;*/
 /**/
 /*int switch_test_get2(struct rmi * rmi, _OUT TEST3_S * ptest);*/
-int find_device(struct rmi * rmi);
+void find_device(struct rmi * rmi);
 
 
 #ifdef __cplusplus

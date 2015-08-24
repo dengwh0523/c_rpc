@@ -31,7 +31,9 @@ extern "C" {
 #ifdef DEBUG
 #define trace(fmt, ...) \
 do{\
-	char __buf1[64], __buf2[1024];\
+	char __buf1[512], __buf2[1024];\
+	memset(__buf1, 0, sizeof(__buf1));\
+	memset(__buf2, 0, sizeof(__buf2));\
     snprintf(__buf1, sizeof(__buf1), "[%s:%d-%s] ", __FILE__, __LINE__, __FUNCTION__);\
     snprintf(__buf2, sizeof(__buf2), fmt, ##__VA_ARGS__);\
     printf("%s%s", __buf1, __buf2);\

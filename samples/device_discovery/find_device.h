@@ -16,7 +16,7 @@ typedef struct {
 	char dev_mac[6] MARK(5, 0);
 } DEV_INFO_S;
 
-int set_dev_info(struct rmi * rmi, _IN DEV_INFO_S * pdev);
+void set_dev_info(struct rmi * rmi, _IN DEV_INFO_S * pdev);
 
 #ifdef __cplusplus
 }
