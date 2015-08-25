@@ -75,6 +75,19 @@ EXPORTS
 	net_to_ip
 	close_fd
 	socket_init
+	udp_send
+	udp_recv
+	write_fd_timeout
+	read_fd_timeout
+	socket_join_group
+	socket_leave_group
+	create_udp_server_socket
+	create_udp_client_socket
+	create_tcp_server_socket
+	create_tcp_client_socket
+	tcp_accept
+	our_ip_addr
+	clear_socket_buf
 	
 	thread_run
 	tpool_create

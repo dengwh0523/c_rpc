@@ -674,6 +674,12 @@ int output_func_definition(FILE * fp, LIST_S * func_list) {
 			output(fp, para->name);
 		}
 		output(fp, ");\n");
+		if (!void_ret) {
+			output(fp, "\n");
+			output(fp, "\tif (rmi->broadcast) {\n");
+			output(fp, "\t\trmi_set_ack(rmi);\n");
+			output(fp, "\t}\n");
+		}
 		
 		output(fp, "\n\t// 序列化出参数\n");
 		output(fp, "\t*ret_len = sizeof(struct rmi_header)+(sizeof(r_ret)");

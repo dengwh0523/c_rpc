@@ -993,8 +993,7 @@ int invoke(struct rmi * rmi, int id, unsigned char * pbuf, int len, unsigned cha
 
 	// broadcast that need ack, make sure clear recv buf
 	if (rmi->broadcast) {
-		unsigned char data;
-		while (read_fd_timeout(rmi->fd, &data, sizeof(data), 0) > 0);
+		clear_socket_buf(rmi->fd);
 	}
 
 	if (0 != find_response(&hdr_orig, (struct rmi_header *)(*r_buf))) {
@@ -1267,7 +1266,7 @@ void * rmi_broadcast_thread(void * arg) {
 
 		ret = rmi_recv(rmi, &pdata, &len);	
 		if (ret < 0) {
-			//trace("rmi_recv failed; err: %s\n", get_fd_error_str(ret));
+			trace("rmi_recv failed; err: %s\n", get_fd_error_str(ret));
 			break;
 		}
 

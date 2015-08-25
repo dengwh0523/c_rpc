@@ -7,6 +7,7 @@
 #include <sys/epoll.h>
 #else
 #include<winsock2.h>
+#include <Ws2tcpip.h>
 #include <io.h>
 #define close	closesocket
 #endif
@@ -650,6 +651,106 @@ int block_write(int fd, unsigned char * pbuf, int len) {
 		perror("write");
 	}
 	
+	return ret;
+}
+
+void clear_socket_buf(int fd) {
+	unsigned char data[1024];
+	while (read_fd_timeout(fd, data, sizeof(data), 0) > 0);
+}
+
+int socket_join_group(int fd, char *mult_ip) {
+	struct ip_mreq imr;
+	imr.imr_multiaddr.s_addr = ip_to_net(mult_ip);
+	imr.imr_interface.s_addr = htonl(INADDR_ANY);
+	if (setsockopt(fd, IPPROTO_IP, IP_ADD_MEMBERSHIP,
+		(const char*)&imr, sizeof (struct ip_mreq)) < 0) {
+			trace("setsockopt IP_ADD_MEMBERSHIP failed: %s\n", strerror(errno));
+			return -1;
+	}
+
+	return 0;
+}
+
+int socket_leave_group(int fd, char *mult_ip) {
+	struct ip_mreq imr;
+	imr.imr_multiaddr.s_addr = ip_to_net(mult_ip);
+	imr.imr_interface.s_addr = htonl(INADDR_ANY);
+	if (setsockopt(fd, IPPROTO_IP, IP_DROP_MEMBERSHIP,
+		(const char*)&imr, sizeof (struct ip_mreq)) < 0) {
+			trace("setsockopt IP_DROP_MEMBERSHIP failed: %s\n", strerror(errno));
+			return -1;
+	}
+
+	return 0;
+}
+
+int our_ip_addr() {
+	int fd;
+	/*char * mult_ip = "228.67.43.91";*/
+	char * mult_ip = "255.255.255.255";
+	unsigned short port = 15947;
+	char test_string[1024] = "hostIdTest";
+	int test_string_len = strlen(test_string);
+	char recv_buf[1024] = {0};
+	int recv_len;
+	char src_ip[16] = {0};
+	int ret = 0;
+
+	fd = create_udp_server_socket(port);
+	if (fd <= 0) {
+		trace("create_udp_server_socket failed\n");
+		ret = -1;
+		goto exit;
+	}
+
+	do {
+// 		ret = socket_join_group(fd, mult_ip);
+// 		if (ret < 0) {
+// 			trace("socket_join_group failed\n");
+// 			break;
+// 		}
+
+		srand((unsigned int)&recv_len);
+
+		sprintf(test_string+test_string_len, "%d", rand());
+		test_string_len = strlen(test_string);
+
+		ret = udp_send(fd, test_string, test_string_len, mult_ip, port);
+		if (ret < 0) {
+			trace("udp_send failed\n");
+			break;
+		}
+
+		while(1) {
+			ret = read_fd_timeout(fd, NULL, 0, 5000);
+			if (ret < 0) {
+				trace("read_fd_timeout failed\n");
+				break;
+			}
+			recv_len = udp_recv(fd, recv_buf, sizeof(recv_buf), src_ip, NULL);
+
+			if (recv_len == test_string_len && 0 == strncmp(test_string, recv_buf, recv_len)) {
+				break;
+			}
+		}
+	} while(0);
+
+// 	ret = socket_leave_group(fd, mult_ip);
+// 	if (ret < 0) {
+// 		trace("socket_leave_group failed\n");
+// 		goto exit;
+// 	}
+
+exit:
+	if (fd > 0) {
+		close_fd(fd);
+	}
+	if (ret < 0) {
+		ret = 0;
+	} else {
+		ret = ip_to_net(src_ip);
+	}
 	return ret;
 }
 

@@ -23,8 +23,14 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "performence_client", "perfo
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "device_discovery_server", "device_discovery_server.vcproj", "{1BC0C4E7-A4B5-4600-8C56-8D278A47B2D5}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D85F5704-01BF-45D4-89B8-852452F936E7} = {D85F5704-01BF-45D4-89B8-852452F936E7}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "device_discovery_client", "device_discovery_client.vcproj", "{6EB1C678-BB88-44ED-AF83-3EBA8DA249DB}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D85F5704-01BF-45D4-89B8-852452F936E7} = {D85F5704-01BF-45D4-89B8-852452F936E7}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

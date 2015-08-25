@@ -21,11 +21,9 @@ int test_cnt = 0;
 int connect_cnt = 0;
 
 void set_dev_info(struct rmi * rmi, DEV_INFO_S * pdev) {
-	printf("dev_ip: %s\n", net_to_ip(pdev->dev_ip));
+	printf("dev_ip: 0x%08x %s\n", pdev->dev_ip, net_to_ip(pdev->dev_ip));
 
-	/*rmi_set_ack(rmi);*/
-
-	return 0;
+	return;
 }
 
 void * test_proc() {
@@ -37,7 +35,6 @@ void * test_proc() {
 	rmi = &client_rmi;
 	RMI_INIT_CLIENT(rmi, test);	
 	rmi_set_broadcast(rmi);
-	rmi_set_timeout(rmi, 500);
 	if (0 != rmi_client_start(rmi, "255.255.255.255", server_port)) {
 		trace("rmi_client_start failed\n");
 		return NULL;
@@ -89,6 +86,7 @@ int main(int argc, char * argv[]) {
 	RMI_INIT_SERVER(&find_rmi, find);
 	rmi_set_broadcast(&find_rmi);
 /*	rmi_set_keepalive_time(&find_rmi, 0xffffff);*/
+	rmi_set_recv_buf_size(&find_rmi, 1024*1024);
 	rmi_server_start(&find_rmi, 8888);
 
 	for(i = 0; i < CONNECT_NUM; i++) {

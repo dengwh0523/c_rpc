@@ -1,6 +1,8 @@
 #ifndef _WIN32
 #include <signal.h>
 #include <pthread.h>
+#else
+#include <Winsock2.h>
 #endif
 
 #include <stdlib.h>
@@ -17,7 +19,8 @@ void find_device(struct rmi * rmi) {
 	DEV_INFO_S stDevinfo;
 	struct rmi find_rmi;
 
-	stDevinfo.dev_ip = 0x8501a8c0;
+	/*stDevinfo.dev_ip = 0x8501a8c0;*/
+	stDevinfo.dev_ip = our_ip_addr();
 
 	RMI_INIT_CLIENT(&find_rmi, find);
 	rmi_set_broadcast(&find_rmi);
@@ -25,9 +28,7 @@ void find_device(struct rmi * rmi) {
 	set_dev_info(&find_rmi, &stDevinfo);
 	rmi_client_close(&find_rmi);
 
-	/*rmi_set_ack(rmi);*/
-
-	return 0;
+	return;
 }
 
 int main(int argc, char * argv[]) {

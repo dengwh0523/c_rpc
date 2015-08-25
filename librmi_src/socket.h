@@ -61,6 +61,11 @@ int get_host_info(int fd, char * src_ip, unsigned short * src_port);
 int get_peer_info(int fd, char * src_ip, unsigned short * src_port);
 int udp_set_dst(int fd, char * dst_ip, unsigned short port);
 
+void clear_socket_buf(int fd);
+int socket_join_group(int fd, char *mult_ip);
+int socket_leave_group(int fd, char *mult_ip);
+int our_ip_addr();
+
 
 #ifdef __cplusplus
 }
