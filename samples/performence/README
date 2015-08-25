@@ -1,4 +1,11 @@
-usage:
-	server:	./server 12345
-	client: ./client 127.0.0.1 12345
+编译过程：
+1 用rmiparse生成存根和代理文件，对于linux平台，此过程在Makefile里实现，不用手动调用；对于windows平台，需要手动执行如下命令
+	rmiparse test.h test
+2 分别编译server和client
+	对于linux平台: 直接make
+	对于windows平台: 工程位于vsprojects里的performence_server和performence_client
+	
+使用方法：
+	服务端:	./server 12345
+	客户端: ./client 127.0.0.1 12345
 	

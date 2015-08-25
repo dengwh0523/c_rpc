@@ -1,12 +1,10 @@
 编译过程：
 1 用rmiparse生成存根和代理文件，对于linux平台，此过程在Makefile里实现，不用手动调用；对于windows平台，需要手动执行如下命令
 	rmiparse test.h test
-	rmiparse find_device.h find
-2 分别编译server和client
+2 编译
 	对于linux平台: 直接make
-	对于windows平台: 工程位于vsprojects里的device_discovery_server和device_discovery_client
+	对于windows平台: 工程位于vsprojects里的print_struct
 	
 使用方法：
-	服务端:	./server 12345
-	客户端: ./client 12345
+	./main
 	
