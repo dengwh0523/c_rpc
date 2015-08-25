@@ -568,7 +568,7 @@ int rmi_broadcast_recv(struct rmi * rmi, unsigned char ** r_buf, int * r_len) {
 	
 	ret = read_fd_timeout(rmi->fd, NULL, 0, rmi->timeout);
 	if (ret < 0) {
-		trace("nonblock_read failed; err: %s\n", get_fd_error_str(ret));
+		//trace("nonblock_read failed; err: %s\n", get_fd_error_str(ret));
 		return -1;
 	}
 	len = BROADCAST_PACKET_LEN;
@@ -610,7 +610,7 @@ int rmi_recv(struct rmi * rmi, unsigned char ** r_buf, int * r_len) {
 		
 		ret = nonblock_read(rmi->fd, (unsigned char *)&hdr, sizeof(hdr), rmi->timeout);
 		if (ret < 0) {
-			trace("nonblock_read failed; err: %s\n", get_fd_error_str(ret));
+			//trace("nonblock_read failed; err: %s\n", get_fd_error_str(ret));
 			break;
 		}
 			
@@ -640,7 +640,7 @@ int rmi_recv(struct rmi * rmi, unsigned char ** r_buf, int * r_len) {
 			}			
 			ret = nonblock_read(rmi->fd, pdata, rd_len, rmi->timeout);
 			if (ret < 0) {
-				trace("nonblock_read failed; err: %s\n", get_fd_error_str(ret));
+				//trace("nonblock_read failed; err: %s\n", get_fd_error_str(ret));
 				break;
 			}
 			pdata += rd_len;
@@ -665,13 +665,13 @@ int rmi_send(struct rmi * rmi, unsigned char * pbuf, int len) {
 	} else if (RMI_SOCKET_TCP == rmi->socket_type) {
 		ret = nonblock_write(rmi->fd, pbuf, len, rmi->timeout);
 		if (ret < 0) {
-			trace("nonblock_write failed; err: %s\n", get_fd_error_str(ret));
+			//trace("nonblock_write failed; err: %s\n", get_fd_error_str(ret));
 			return ret;
 		}		
  	} else {
 		ret = nonblock_write(rmi->fd, pbuf, sizeof(struct rmi_header), rmi->timeout);
 		if (ret < 0) {
-			trace("nonblock_write failed; err: %s\n", get_fd_error_str(ret));
+			//trace("nonblock_write failed; err: %s\n", get_fd_error_str(ret));
 			return ret;
 		}
 		len -= sizeof(struct rmi_header);
@@ -686,7 +686,7 @@ int rmi_send(struct rmi * rmi, unsigned char * pbuf, int len) {
 			
 			ret = nonblock_write(rmi->fd, pbuf, wr_len, rmi->timeout);
 			if (ret < 0) {
-				trace("nonblock_write failed; err: %s\n", get_fd_error_str(ret));
+				//trace("nonblock_write failed; err: %s\n", get_fd_error_str(ret));
 				return ret;
 			}
 			pbuf += wr_len;
@@ -973,7 +973,7 @@ int invoke(struct rmi * rmi, int id, unsigned char * pbuf, int len, unsigned cha
 	// 发送消息
 	r_ret = rmi_send(rmi, pbuf, len+sizeof(struct rmi_header));
 	if (r_ret < 0) {
-		trace("nonblock_write failed; err: %s\n", get_fd_error_str(r_ret));
+		//trace("nonblock_write failed; err: %s\n", get_fd_error_str(r_ret));
 		goto socket_error;
 	}
 
@@ -987,7 +987,7 @@ int invoke(struct rmi * rmi, int id, unsigned char * pbuf, int len, unsigned cha
 	// 获取返回值
 	r_ret = rmi_recv(rmi, r_buf, r_len);
 	if (r_ret < 0) {
-		trace("rmi_recv failed; err: %s\n", get_fd_error_str(r_ret));
+		//trace("rmi_recv failed; err: %s\n", get_fd_error_str(r_ret));
 		goto socket_error;
 	}
 
@@ -1266,7 +1266,7 @@ void * rmi_broadcast_thread(void * arg) {
 
 		ret = rmi_recv(rmi, &pdata, &len);	
 		if (ret < 0) {
-			trace("rmi_recv failed; err: %s\n", get_fd_error_str(ret));
+			//trace("rmi_recv failed; err: %s\n", get_fd_error_str(ret));
 			break;
 		}
 
