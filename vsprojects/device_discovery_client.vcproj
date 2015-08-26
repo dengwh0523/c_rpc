@@ -24,6 +24,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="..\samples\device_discovery\gen.bat $(TargetDir)\rmiparse"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -96,6 +97,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="..\samples\device_discovery\gen.bat $(TargetDir)\rmiparse"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"

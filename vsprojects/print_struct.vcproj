@@ -24,6 +24,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="..\samples\print_struct\gen.bat $(TargetDir)\rmiparse"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -96,6 +97,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="..\samples\print_struct\gen.bat $(TargetDir)\rmiparse"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
