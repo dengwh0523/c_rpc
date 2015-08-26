@@ -9,3 +9,15 @@ A light-weight RPC framework written by C. The name of this framework is rmi. It
 [samples]
 	This is the test directory.
 	
+[vsprojects]
+	vs2008 projects for windows
+	
+linux平台编译过程：
+1 执行make，生成librmi库和rmiparse编译器
+2 进入samples各文件夹，详见里面的readme
+
+windows平台编译过程：
+1 用vs2008打开vsprojects下面的解决方案。
+2 编译rmiparse工程生成rmiparse编译器
+3 进入samples各文件夹，详见里面的readme
+	
