@@ -434,7 +434,7 @@ int output_struct_pair(FILE * fp, LIST_S * struct_list) {
 	for (i = 0; i < newtype_num; i++) {
 		struct newtype_info * newtype;
 		newtype = list_at(&g_newtype_list, i);
-		if (0 != strcmp(newtype->orig_type, "struct")) {	
+		if (strstr(newtype->orig_type, "struct") && 0 != strcmp(newtype->orig_type, "struct")) {	// write when like this: typedef struct bbb BBB_S;
 			output(fp, "\t{");
 			output(fp, "\"");
 			output(fp, newtype->new_type);

@@ -317,6 +317,8 @@ type_specifier
 	}
 	| enum_specifier
 	{
+		if ($$) free($$);
+		$$ = strdup(g_type);
 	}
 	| TYPE_NAME
 	| NEWTYPE
@@ -435,8 +437,23 @@ struct_declarator
 
 enum_specifier
 	: ENUM '{' enumerator_list '}'
+	{
+		strcpy(g_type, $1);
+	}
 	| ENUM IDENTIFIER '{' enumerator_list '}'
+	{
+		strcpy(g_type, $1);
+		strcat(g_type, " ");
+		strcat(g_type, $2);
+
+		strcpy(s_newtype.orig_name, $2);
+	}
 	| ENUM IDENTIFIER
+	{
+		strcpy(g_type, $1);
+		strcat(g_type, " ");
+		strcat(g_type, $2);
+	}
 	;
 
 enumerator_list
