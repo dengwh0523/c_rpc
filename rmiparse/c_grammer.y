@@ -354,6 +354,8 @@ struct_or_union_specifier
 		strcpy(g_type, $1);
 		strcat(g_type, " ");
 		strcat(g_type, $2);
+
+		strcpy(s_newtype.orig_name, $2);
 	}
 	;
 
@@ -453,6 +455,8 @@ enum_specifier
 		strcpy(g_type, $1);
 		strcat(g_type, " ");
 		strcat(g_type, $2);
+
+		strcpy(s_newtype.orig_name, $2);
 	}
 	;
 
