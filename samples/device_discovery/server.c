@@ -20,7 +20,7 @@ void find_device(struct rmi * rmi) {
 	struct rmi find_rmi;
 
 	/*stDevinfo.dev_ip = 0x8501a8c0;*/
-	stDevinfo.dev_ip = our_ip_addr();
+	stDevinfo.dev_ip = my_htonl(our_ip_addr());
 
 	RMI_INIT_CLIENT(&find_rmi, find);
 	rmi_set_broadcast(&find_rmi);

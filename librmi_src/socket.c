@@ -450,6 +450,22 @@ int set_fd_broadcast(int fd) {
 	return setsockopt(fd, SOL_SOCKET, SO_BROADCAST,(char*)&bbroadcast,sizeof(int));
 }
 
+int my_htonl(int data) {
+	return htonl(data);
+}
+
+int my_ntohl(int data) {
+	return ntohl(data);
+}
+
+int my_htons(int data) {
+	return htons(data);
+}
+
+int my_ntohs(int data) {
+	return ntohs(data);
+}
+
 int read_fd_timeout(int fd, unsigned char * pbuf, int len, int timeout/* unit: ms */) {
 	int rd_len;
 	

@@ -88,6 +88,10 @@ EXPORTS
 	tcp_accept
 	our_ip_addr
 	clear_socket_buf
+	my_htonl
+	my_ntohl
+	my_htons
+	my_ntohs
 	
 	thread_run
 	tpool_create

@@ -265,7 +265,7 @@ int set_varint_signed(const unsigned char * pdata, const int len, unsigned char 
 			return -1;
 	}
 	value = (value << 1) ^ (value >> (sizeof(long long)*8-1));
-	return set_varint((unsigned char *)&value, len, pbuf);
+	return set_varint((unsigned char *)&value, sizeof(value), pbuf);
 }
 
 // get signed char, short, int, long long

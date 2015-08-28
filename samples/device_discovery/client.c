@@ -21,7 +21,7 @@ int test_cnt = 0;
 int connect_cnt = 0;
 
 void set_dev_info(struct rmi * rmi, DEV_INFO_S * pdev) {
-	printf("dev_ip: 0x%08x %s\n", pdev->dev_ip, net_to_ip(pdev->dev_ip));
+	printf("dev_ip: 0x%08x %s\n", pdev->dev_ip, net_to_ip(my_ntohl(pdev->dev_ip)));
 
 	return;
 }

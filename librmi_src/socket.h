@@ -46,6 +46,10 @@ int set_fd_nonblock(int fd);
 int set_fd_recvbuf(int fd, int recv_buf);
 int set_fd_sendbuf(int fd, int send_buf);
 int set_fd_broadcast(int fd);
+int my_htonl(int data);
+int my_ntohl(int data);
+int my_htons(int data);
+int my_ntohs(int data);
 
 // fd read write fuction
 int read_fd_timeout(int fd, unsigned char * pbuf, int len, int timeout/*ms*/);
