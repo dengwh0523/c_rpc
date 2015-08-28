@@ -274,7 +274,7 @@ int get_varint_signed(unsigned char * pdata, const int len, const unsigned char 
 	unsigned long long value_unsigned = 0;
 	long long value, mask;
 
-	r_len = get_varint((unsigned char *)&value_unsigned, len, pbuf);
+	r_len = get_varint((unsigned char *)&value_unsigned, sizeof(value_unsigned), pbuf);
 	if (value_unsigned & 0x01) {
 		mask = -1;
 	} else {
