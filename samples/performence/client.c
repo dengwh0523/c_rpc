@@ -50,7 +50,7 @@ void * test_proc(void * arg) {
 	//connect_cnt++;
 /*	return NULL;*/
 	for (n = 0; n < test_times; n++) {
-		gs_para1[0].a = -1;
+		gs_para1[0].a = 1ll<<63;
 		gs_para1[0].b = -2;
 		gs_para1[0].c = 1.2;
 		gs_para1[0].d = 98.12345;

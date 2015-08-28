@@ -212,7 +212,7 @@ int set_varint(const unsigned char * pdata, const int len, unsigned char * pbuf)
 int get_varint(unsigned char * pdata, const int len, const unsigned char * pbuf) {
 	int r_len = 0;
 	unsigned long long value = 0;
-	unsigned int tmp;
+	unsigned long long tmp;
 	while(1) {
 		tmp = pbuf[r_len];
 		value |= (tmp & 0x7f)<<(r_len*7);

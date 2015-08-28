@@ -6,7 +6,7 @@
 #define TEST_MACRO	100
 
 struct aaa {
-	int a MARK(0, 0);
+	long long a MARK(0, 0);
 	char b MARK(1, 0);
 	float c MARK(2, 0);
 	double d MARK(3, 0);
